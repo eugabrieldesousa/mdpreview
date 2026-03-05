@@ -648,19 +648,86 @@ textarea:focus, input:focus { outline: none; }
 .fill-field-remove:hover {
   opacity: 1;
 }
+
+/* === BOOKMARKS / ATALHOS === */
+.bookmark-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 150ms ease;
+  border-bottom: 1px solid var(--divider);
+}
+.bookmark-item:last-child { border-bottom: none; }
+.bookmark-item:hover { background: var(--hover); }
+.bookmark-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.bookmark-label {
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bookmark-date {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+.bookmark-remove {
+  color: var(--text-secondary);
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  transition: all 150ms ease;
+  flex-shrink: 0;
+}
+.bookmark-remove:hover { color: var(--accent-red); background: var(--hover); }
+.bookmark-badge {
+  font-size: 10px;
+  min-width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  position: absolute;
+  top: 2px;
+  right: 0;
+  padding: 0 4px;
+  line-height: 1;
+}
+.bookmark-btn-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.bookmark-highlight {
+  background: var(--accent-faint);
+  border-radius: var(--radius-sm);
+  transition: background 1.2s ease;
+}
 </style>
 </head>
 <body>
 <div id="app">
-  <!-- MOBILE TOGGLE -->
+  
   <button class="mobile-toggle" @click="sidebarOpen = !sidebarOpen" aria-label="Menu">
     <i data-lucide="menu" style="width:20px;height:20px;"></i>
   </button>
 
-  <!-- DRAWER OVERLAY -->
+  
   <div class="drawer-overlay" :class="{ visible: sidebarOpen }" @click="sidebarOpen = false"></div>
 
-  <!-- SIDEBAR -->
+  
   <aside class="sidebar" :class="{ open: sidebarOpen }">
     <div class="sidebar-header">
       <span class="app-title">MD Viewer</span>
@@ -699,7 +766,7 @@ textarea:focus, input:focus { outline: none; }
     </div>
   </aside>
 
-  <!-- NOTES LIST -->
+  
   <section class="notes-list" :class="{ 'hidden-mobile': activeFileId && isMobile }">
     <div class="notes-header">
       <span class="notes-title">{{ currentFolderName }}</span>
@@ -732,7 +799,7 @@ textarea:focus, input:focus { outline: none; }
     </div>
   </section>
 
-  <!-- EDITOR PANE -->
+  
   <main class="editor-pane" v-if="activeFile">
     <div class="editor-header">
       <div class="left-actions">
@@ -742,6 +809,12 @@ textarea:focus, input:focus { outline: none; }
         <button @click="deleteFile(activeFile.id)" aria-label="Excluir nota">
           <i data-lucide="trash-2" style="width:18px;height:18px;"></i>
         </button>
+        <span class="bookmark-btn-wrap">
+          <button @click="showBookmarks = true" aria-label="Atalhos">
+            <i data-lucide="bookmark" style="width:18px;height:18px;"></i>
+          </button>
+          <span v-if="currentFileBookmarks.length" class="bookmark-badge">{{ currentFileBookmarks.length }}</span>
+        </span>
         <button @click="showSettings = true" aria-label="Tamanho da fonte">
           <i data-lucide="a-large-small" style="width:18px;height:18px;"></i>
         </button>
@@ -770,7 +843,7 @@ textarea:focus, input:focus { outline: none; }
     </div>
   </main>
 
-  <!-- EMPTY EDITOR STATE -->
+  
   <main class="editor-pane" v-else>
     <div class="editor-header">
       <div class="left-actions">
@@ -796,15 +869,20 @@ textarea:focus, input:focus { outline: none; }
     </div>
   </main>
 
+  
   <!-- TEXT SELECTION POPOVER -->
   <div v-if="popover.visible" class="text-popover" :style="{ top: popover.y + 'px', left: popover.x + 'px' }">
-    <button @click="addFillableFromSelection" aria-label="Adicionar campo"
+    <button v-if="popover.inCodeBlock" @click="addFillableFromSelection" aria-label="Adicionar campo"
             style="display:flex;align-items:center;gap:6px;white-space:nowrap;padding:var(--space-2) var(--space-3);font-size:var(--text-sm);font-weight:500;">
       <span style="font-size:14px;">📝</span> Adicionar campo
     </button>
+    <button @click="addBookmarkFromSelection" aria-label="Criar atalho"
+            style="display:flex;align-items:center;gap:6px;white-space:nowrap;padding:var(--space-2) var(--space-3);font-size:var(--text-sm);font-weight:500;">
+      <span style="font-size:14px;">📌</span> Criar atalho
+    </button>
   </div>
 
-  <!-- SETTINGS MODAL -->
+  
   <div v-if="showSettings" class="modal-overlay" @click.self="showSettings = false">
     <div class="modal" style="max-width: 400px;">
       <div class="modal-header">
@@ -840,7 +918,7 @@ textarea:focus, input:focus { outline: none; }
     </div>
   </div>
 
-  <!-- IMPORT CONFLICT MODAL -->
+  
   <div v-if="importConflict.visible" class="modal-overlay" @click.self="importConflict.visible = false">
     <div class="modal" style="max-width: 440px;">
       <div class="modal-header">
@@ -866,7 +944,7 @@ textarea:focus, input:focus { outline: none; }
     </div>
   </div>
 
-  <!-- RENAME NOTE MODAL -->
+  
   <div v-if="renameNote.visible" class="modal-overlay" @click.self="renameNote.visible = false">
     <div class="modal" style="max-width:380px;">
       <div class="modal-header">
@@ -888,7 +966,7 @@ textarea:focus, input:focus { outline: none; }
     </div>
   </div>
 
-  <!-- FILL MODAL -->
+  
   <div v-if="fillModal.visible" class="modal-overlay" @click.self="fillModal.visible = false">
     <div class="modal" style="max-width:440px;">
       <div class="modal-header">
@@ -911,7 +989,35 @@ textarea:focus, input:focus { outline: none; }
     </div>
   </div>
 
-  <!-- TOAST -->
+  <!-- BOOKMARKS MODAL -->
+  <div v-if="showBookmarks" class="modal-overlay" @click.self="showBookmarks = false">
+    <div class="modal" style="max-width: 440px;">
+      <div class="modal-header">
+        <h2>Atalhos</h2>
+        <button @click="showBookmarks = false" aria-label="Fechar">
+          <i data-lucide="x" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div v-if="currentFileBookmarks.length === 0" style="text-align:center;padding:var(--space-8) 0;color:var(--text-secondary);">
+          <i data-lucide="bookmark" style="width:40px;height:40px;opacity:0.3;margin-bottom:var(--space-3);"></i>
+          <p style="font-weight:500;">Nenhum atalho criado</p>
+          <p style="font-size:var(--text-sm);margin-top:var(--space-2);">Selecione texto no preview e clique em "Criar atalho"</p>
+        </div>
+        <div v-for="bm in currentFileBookmarks" :key="bm.id" class="bookmark-item">
+          <div class="bookmark-info" @click="navigateToBookmark(bm)">
+            <span class="bookmark-label">{{ bm.label }}</span>
+            <span class="bookmark-date">{{ formatDate(bm.createdAt) }}</span>
+          </div>
+          <button class="bookmark-remove" @click.stop="removeBookmark(bm.id)" aria-label="Remover atalho">
+            <i data-lucide="x" style="width:14px;height:14px;"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
   <div v-if="toast.visible" class="toast" :class="{ 'fade-out': toast.fading }">
     <i data-lucide="check-circle" class="toast-icon" style="width:18px;height:18px;"></i>
     <span>{{ toast.message }}</span>
@@ -934,6 +1040,7 @@ const LS_FILES = 'mdv_files';
 const LS_FOLDERS = 'mdv_folders';
 const LS_SETTINGS = 'mdv_settings';
 const LS_FILLABLE = 'mdv_fillable';
+const LS_BOOKMARKS = 'mdv_bookmarks';
 
 function loadLS(key, fallback) {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
@@ -994,6 +1101,10 @@ createApp({
     // Fillable fields
     const fillableFields = ref(loadLS(LS_FILLABLE, []));
     const fillModal = ref({ visible: false, fields: [], blockHash: '', blockRaw: '' });
+
+    // Bookmarks / Atalhos
+    const bookmarksData = ref(loadLS(LS_BOOKMARKS, []));
+    const showBookmarks = ref(false);
 
     // --- Computed ---
     const isMobile = ref(window.innerWidth <= 768);
@@ -1155,6 +1266,8 @@ createApp({
     function deleteFile(id) {
       files.value = files.value.filter(f => f.id !== id);
       if (activeFileId.value === id) activeFileId.value = null;
+      bookmarksData.value = bookmarksData.value.filter(b => b.fileId !== id);
+      persistBookmarks();
       persist();
       nextTick(refreshIcons);
     }
@@ -1198,10 +1311,11 @@ createApp({
 
     // --- Text selection popover ---
     function onTextSelect(e) {
-      if (!e.target.closest || !e.target.closest('.code-block-wrapper')) return;
+      if (!e.target.closest || !e.target.closest('.markdown-body')) return;
       const sel = window.getSelection();
       const text = sel ? sel.toString().trim() : '';
       if (text.length > 0) {
+        const inCodeBlock = !!e.target.closest('.code-block-wrapper');
         selectedText.value = text;
         const range = sel.getRangeAt(0);
         const rect = range.getBoundingClientRect();
@@ -1209,7 +1323,8 @@ createApp({
           visible: true,
           x: rect.left + rect.width / 2 - 70,
           y: rect.top - 44,
-          text
+          text,
+          inCodeBlock
         };
         nextTick(refreshIcons);
       }
@@ -1338,6 +1453,76 @@ createApp({
       navigator.clipboard.writeText(text);
       fillModal.value.visible = false;
       showToast('Copiado com sucesso');
+    }
+
+    // --- Bookmarks / Atalhos ---
+    const currentFileBookmarks = computed(() => {
+      if (!activeFile.value) return [];
+      return bookmarksData.value
+        .filter(b => b.fileId === activeFile.value.id)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    });
+
+    function persistBookmarks() {
+      saveLS(LS_BOOKMARKS, bookmarksData.value);
+    }
+
+    function addBookmarkFromSelection() {
+      if (!selectedText.value || !activeFile.value) return;
+      const label = selectedText.value.substring(0, 120);
+      const exists = bookmarksData.value.some(
+        b => b.fileId === activeFile.value.id && b.label === label
+      );
+      if (exists) {
+        showToast('Atalho ja existe');
+        popover.value.visible = false;
+        return;
+      }
+      bookmarksData.value.push({
+        id: uuid(),
+        fileId: activeFile.value.id,
+        label: label,
+        anchor: label,
+        createdAt: new Date().toISOString()
+      });
+      persistBookmarks();
+      popover.value.visible = false;
+      window.getSelection().removeAllRanges();
+      showToast('Atalho criado');
+    }
+
+    function removeBookmark(id) {
+      bookmarksData.value = bookmarksData.value.filter(b => b.id !== id);
+      persistBookmarks();
+      showToast('Atalho removido');
+    }
+
+    function navigateToBookmark(bm) {
+      showBookmarks.value = false;
+      if (editMode.value) {
+        editMode.value = false;
+      }
+      nextTick(() => {
+        setTimeout(() => {
+          const mbEl = markdownBody.value;
+          if (!mbEl) return;
+          const walker = document.createTreeWalker(mbEl, NodeFilter.SHOW_TEXT, null, false);
+          let node;
+          while (node = walker.nextNode()) {
+            if (node.textContent.includes(bm.anchor)) {
+              const el = node.parentElement;
+              if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.classList.add('bookmark-highlight');
+                setTimeout(() => {
+                  el.classList.remove('bookmark-highlight');
+                }, 1800);
+                break;
+              }
+            }
+          }
+        }, 100);
+      });
     }
 
     // --- Import / Export ---
@@ -1527,7 +1712,7 @@ createApp({
     });
 
     // Watch for icon refresh after reactivity settles
-    watch([activeFileId, editMode, activeFolderId, showSettings, () => fillModal.value.visible, () => importConflict.value.visible, () => toast.value.visible], () => {
+    watch([activeFileId, editMode, activeFolderId, showSettings, () => fillModal.value.visible, () => importConflict.value.visible, () => toast.value.visible, () => showBookmarks.value], () => {
       nextTick(refreshIcons);
     });
 
@@ -1540,6 +1725,7 @@ createApp({
       renamingFolderId, renamingFolderName,
       toast, popover, selectedText, importConflict, renameNote,
       fillableFields, fillModal,
+      bookmarksData, showBookmarks, currentFileBookmarks,
       // Methods
       toggleTheme, changeFontSize, saveFontFamily, toggleMode,
       createFolder, selectFolder, startRenameFolder, confirmRenameFolder, cancelRenameFolder,
@@ -1548,6 +1734,7 @@ createApp({
       getTitle, getPreview, formatDate, getFolderName,
       onTextSelect, hidePopover, copySelection, quoteSelection,
       addFillableFromSelection, removeFillField, copyFilledCode,
+      addBookmarkFromSelection, removeBookmark, navigateToBookmark,
       exportProject, exportSingle, importProject, resolveImport,
       startRenameNote, confirmRenameNote,
       persist, showToast, refreshIcons
