@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MD Viewer</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" id="hljs-theme">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* === BACKGROUNDS (Dark Mode - iOS OLED) === */
+  --bg: #000000;
+  --sidebar-bg: #1C1C1E;
+  --list-bg: #1C1C1E;
+  --list-active: rgba(10,132,255,0.18);
+  --editor-bg: #000000;
+  --code-bg: #1C1C1E;
+  --hover: rgba(255,255,255,0.08);
+  --input-bg: #2C2C2E;
+  --modal-bg: #2C2C2E;
+  --toast-bg: #2C2C2E;
+
+  /* === TEXTOS (Dark) === */
+  --text-primary: #FFFFFF;
+  --text-body: #EBEBF5;
+  --text-secondary: #98989D;
+  --text-tertiary: #636366;
+  --text-quaternary: #48484A;
+  --text-code: #FFFFFF;
+
+  /* === ACCENT iOS (Dark) === */
+  --accent: #0A84FF;
+  --accent-dim: rgba(10,132,255,0.60);
+  --accent-faint: rgba(10,132,255,0.35);
+  --accent-green: #32D74B;
+  --accent-orange: #FF9F0A;
+  --accent-red: #FF453A;
+  --accent-yellow: #FFD60A;
+  --accent-purple: #BF5AF2;
+  --accent-pink: #FF375F;
+
+  /* === SYNTAX HIGHLIGHTING (Xcode Dark) === */
+  --code-keyword: #FF7AB2;
+  --code-string: #FF8170;
+  --code-comment: #7F8C98;
+  --code-function: #4EB0CC;
+  --code-variable: #6BDFFF;
+  --code-number: #D9C97C;
+  --code-plain: #FFFFFF;
+  --code-type: #ACF2E4;
+  --code-attr: #FFD0A0;
+
+  /* === BORDAS E SOMBRAS (Dark) === */
+  --divider: rgba(255,255,255,0.10);
+  --border-subtle: rgba(255,255,255,0.10);
+  --border-toast: rgba(255,255,255,0.08);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.50);
+  --shadow-modal: 0 24px 60px rgba(0,0,0,0.60);
+  --scrollbar-thumb: rgba(255,255,255,0.15);
+
+  /* === TIPOGRAFIA iOS === */
+  --font-system: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'SF Mono', 'Monaco', 'Menlo', 'Fira Code', 'Consolas', 'Courier New', monospace;
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-lg: 17px;
+  --text-xl: 20px;
+  --text-2xl: 28px;
+  --text-3xl: 34px;
+
+  /* === ESPAÇAMENTOS (Múltiplos de 4 - iOS Grid) === */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* === RAIOS iOS === */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 9999px;
+
+  /* === Legacy (usadas pelo JS) === */
+  --font-size: 15px;
+  --font-family: var(--font-system);
+}
+
+/* === LIGHT MODE (iOS) === */
+.light {
+  --bg: #FFFFFF;
+  --sidebar-bg: #F2F2F7;
+  --list-bg: #FFFFFF;
+  --list-active: rgba(0,122,255,0.12);
+  --editor-bg: #FFFFFF;
+  --code-bg: #F5F5F7;
+  --hover: rgba(0,0,0,0.04);
+  --input-bg: #F2F2F7;
+  --modal-bg: #FFFFFF;
+  --toast-bg: #FFFFFF;
+
+  --text-primary: #000000;
+  --text-body: #3C3C43;
+  --text-secondary: #8E8E93;
+  --text-tertiary: #AEAEB2;
+  --text-quaternary: #C7C7CC;
+  --text-code: #1D1D1F;
+
+  --accent: #007AFF;
+  --accent-dim: rgba(0,122,255,0.60);
+  --accent-faint: rgba(0,122,255,0.35);
+  --accent-green: #34C759;
+  --accent-orange: #FF9500;
+  --accent-red: #FF3B30;
+  --accent-yellow: #FFD60A;
+  --accent-purple: #AF52DE;
+  --accent-pink: #FF2D55;
+
+  --code-keyword: #AD3DA4;
+  --code-string: #D12F1B;
+  --code-comment: #6C7986;
+  --code-function: #3E8087;
+  --code-variable: #0F68A0;
+  --code-number: #1C00CF;
+  --code-plain: #1D1D1F;
+  --code-type: #23575C;
+  --code-attr: #804000;
+
+  --divider: rgba(0,0,0,0.08);
+  --border-subtle: rgba(0,0,0,0.08);
+  --border-toast: rgba(0,0,0,0.06);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-modal: 0 24px 60px rgba(0,0,0,0.15);
+  --scrollbar-thumb: rgba(0,0,0,0.15);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: var(--font-system);
+  background: var(--bg);
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: var(--radius-full); }
+button { cursor: pointer; border: none; background: none; color: inherit; font-family: inherit; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-sm); }
+input, textarea { font-family: inherit; }
+textarea:focus, input:focus { outline: none; }
+
+#app { height: 100vh; display: flex; overflow: hidden; }
+
+/* === SIDEBAR (Estilo Apple Notes) === */
+.sidebar {
+  width: 240px; min-width: 240px;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--divider);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  z-index: 30;
+}
+.sidebar-header {
+  height: 52px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 var(--space-4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--divider);
+  flex-shrink: 0;
+}
+.sidebar-header .app-title {
+  font-size: var(--text-lg); font-weight: 700; color: var(--text-primary); letter-spacing: -0.3px;
+}
+.sidebar-header button { color: var(--accent); transition: color 150ms ease; }
+.sidebar-header button:hover { opacity: 0.7; }
+.folder-list { flex: 1; overflow-y: auto; padding: var(--space-2); }
+.folder-item {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-3); border-radius: var(--radius-md);
+  font-size: var(--text-base); color: var(--text-body);
+  cursor: pointer; transition: background 150ms ease;
+  position: relative;
+  font-weight: 500;
+}
+.folder-item:hover { background: var(--hover); }
+.folder-item.active { background: var(--accent); color: #FFFFFF; font-weight: 600; }
+.folder-item.active .folder-icon { color: #FFFFFF; }
+.folder-item.active .folder-count { color: rgba(255,255,255,0.7); }
+.folder-item .folder-icon { color: var(--accent); flex-shrink: 0; }
+.folder-item .folder-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.folder-item .folder-count { font-size: var(--text-xs); color: var(--text-secondary); background: var(--hover); padding: 1px 6px; border-radius: var(--radius-full); }
+.folder-item .folder-actions {
+  opacity: 0; display: flex; gap: var(--space-1); transition: opacity 150ms ease;
+}
+.folder-item:hover .folder-actions { opacity: 1; }
+.folder-item .folder-actions button { padding: 2px; color: var(--text-secondary); }
+.folder-item .folder-actions button:hover { color: var(--text-primary); }
+
+/* === NOTES LIST (Estilo Apple Notes) === */
+.notes-list {
+  width: 300px; min-width: 300px;
+  background: var(--list-bg);
+  border-right: 1px solid var(--divider);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.notes-header {
+  height: 52px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 var(--space-4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--divider);
+  flex-shrink: 0;
+}
+.notes-header .notes-title { font-size: var(--text-lg); font-weight: 700; letter-spacing: -0.3px; }
+.notes-header .header-actions { display: flex; gap: var(--space-1); }
+.notes-header button { color: var(--accent); padding: var(--space-1); transition: opacity 150ms ease; }
+.notes-header button:hover { opacity: 0.7; }
+.notes-search {
+  padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--divider); flex-shrink: 0;
+}
+.notes-search input {
+  width: 100%; padding: var(--space-2) var(--space-3); border-radius: var(--radius-md);
+  background: var(--hover); border: 1px solid transparent;
+  color: var(--text-primary); font-size: var(--text-base);
+  transition: all 150ms ease;
+}
+.notes-search input::placeholder { color: var(--text-secondary); }
+.notes-search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-faint); }
+.notes-items { flex: 1; overflow-y: auto; padding: var(--space-1) var(--space-2); }
+.note-item {
+  padding: var(--space-3); border-radius: var(--radius-md); cursor: pointer;
+  transition: background 150ms ease; margin-bottom: var(--space-1);
+}
+.note-item:hover { background: var(--hover); }
+.note-item.active { background: var(--list-active); }
+.note-item-title {
+  font-size: var(--text-base); font-weight: 600; color: var(--text-primary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  margin-bottom: var(--space-1); letter-spacing: -0.1px;
+}
+.note-item-meta {
+  font-size: var(--text-sm); color: var(--text-secondary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  margin-bottom: var(--space-1);
+}
+.note-item-meta .note-date { color: var(--accent); font-weight: 500; }
+.note-item-folder {
+  font-size: var(--text-xs); color: var(--text-secondary);
+  display: flex; align-items: center; gap: var(--space-1);
+}
+
+/* === EDITOR (Estilo Apple Notes) === */
+.editor-pane {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden;
+  background: var(--editor-bg); min-width: 0;
+}
+.editor-header {
+  height: 52px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 var(--space-4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--divider);
+  flex-shrink: 0;
+}
+.editor-header .left-actions, .editor-header .right-actions { display: flex; align-items: center; gap: var(--space-1); }
+.editor-header button { color: var(--accent); padding: var(--space-2); border-radius: var(--radius-sm); transition: all 150ms ease; }
+.editor-header button:hover { background: var(--hover); opacity: 0.8; }
+.editor-header .edit-status { font-size: var(--text-sm); color: var(--text-secondary); font-weight: 500; }
+.editor-body { flex: 1; overflow-y: auto; position: relative; }
+.editor-textarea {
+  width: 100%; height: 100%; padding: var(--space-8) var(--space-8); border: none; resize: none;
+  background: transparent; color: var(--text-body);
+  font-family: var(--font-mono);
+  font-size: var(--font-size); line-height: 1.7;
+}
+.markdown-body {
+  padding: var(--space-8);
+  font-family: var(--font-family);
+  font-size: var(--font-size);
+  line-height: 1.6;
+  color: var(--text-body);
+  min-height: 100%;
+  max-width: 780px;
+  margin: 0 auto;
+}
+.markdown-body h1, .markdown-body h2, .markdown-body h3,
+.markdown-body h4, .markdown-body h5, .markdown-body h6 {
+  color: var(--text-primary); font-weight: 700;
+  font-family: var(--font-system);
+  letter-spacing: -0.3px;
+}
+.markdown-body h1 { font-size: var(--text-3xl); margin: 1.4em 0 0.6em; }
+.markdown-body h2 { font-size: var(--text-2xl); margin: 1.2em 0 0.5em; }
+.markdown-body h3 { font-size: var(--text-xl); margin: 1em 0 0.4em; }
+.markdown-body h4 { font-size: var(--text-lg); margin: 1em 0 0.4em; }
+.markdown-body p { margin: 0.6em 0; }
+.markdown-body a { color: var(--accent); text-decoration: none; font-weight: 500; }
+.markdown-body a:hover { text-decoration: underline; }
+.markdown-body blockquote {
+  border-left: 3px solid var(--accent);
+  padding: var(--space-2) var(--space-4); margin: 1em 0;
+  color: var(--text-secondary);
+  background: var(--hover);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.markdown-body ul, .markdown-body ol { padding-left: 1.5em; margin: 0.6em 0; }
+.markdown-body li { margin: 0.3em 0; }
+.markdown-body img { max-width: 100%; border-radius: var(--radius-lg); margin: 1em 0; box-shadow: var(--shadow-sm); }
+.markdown-body hr { border: none; border-top: 1px solid var(--divider); margin: 1.5em 0; }
+.markdown-body table { width: 100%; border-collapse: collapse; margin: 1em 0; border-radius: var(--radius-md); overflow: hidden; }
+.markdown-body th, .markdown-body td {
+  border: 1px solid var(--divider); padding: var(--space-2) var(--space-3); text-align: left;
+}
+.markdown-body th { background: var(--hover); font-weight: 600; color: var(--text-primary); }
+.markdown-body code:not(pre code) {
+  background: var(--code-bg); padding: 2px 6px; border-radius: var(--radius-sm);
+  font-family: var(--font-mono); font-size: 0.88em;
+  color: var(--accent-red, var(--code-string));
+}
+
+/* === CODE BLOCKS (Estilo Xcode/Apple) === */
+.code-block-wrapper {
+  position: relative; margin: 1em 0; border-radius: var(--radius-lg);
+  background: var(--code-bg);
+  border: 1px solid var(--divider);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.code-block-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--divider);
+  background: var(--hover);
+}
+.code-block-lang {
+  font-size: var(--text-xs); color: var(--text-secondary);
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+  font-family: var(--font-mono);
+}
+.code-block-actions {
+  display: flex; gap: var(--space-1); opacity: 0; transition: opacity 150ms ease;
+}
+.code-block-wrapper:hover .code-block-actions { opacity: 1; }
+.code-block-actions button {
+  display: flex; align-items: center; gap: var(--space-1);
+  padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-xs);
+  color: var(--text-secondary); transition: all 150ms ease;
+  font-weight: 500;
+}
+.code-block-actions button:hover { background: var(--hover); color: var(--accent); }
+.code-block-wrapper pre {
+  margin: 0; padding: var(--space-4); overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.code-block-wrapper pre code {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm); line-height: 1.6;
+  background: none !important; padding: 0 !important;
+  color: var(--code-plain);
+}
+
+/* === EMPTY STATES === */
+.empty-state {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: var(--space-3);
+  color: var(--text-secondary);
+}
+.empty-state .empty-icon { color: var(--text-tertiary); opacity: 0.5; }
+.empty-state p { font-size: var(--text-base); font-weight: 500; }
+
+/* === MODAL (Estilo iOS Sheet) === */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  animation: fadeIn 200ms ease;
+}
+.modal {
+  background: var(--modal-bg); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl); box-shadow: var(--shadow-modal);
+  width: 90%; max-width: 560px; max-height: 85vh;
+  display: flex; flex-direction: column;
+  animation: modalIn 250ms cubic-bezier(0.32,0.72,0,1);
+}
+.modal-header {
+  padding: var(--space-5) var(--space-6) 0;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-header h2 { font-size: var(--text-lg); font-weight: 700; color: var(--text-primary); letter-spacing: -0.2px; }
+.modal-header button { color: var(--text-secondary); padding: var(--space-1); border-radius: var(--radius-full); }
+.modal-header button:hover { color: var(--text-primary); background: var(--hover); }
+.modal-body { padding: var(--space-4) var(--space-6); overflow-y: auto; flex: 1; }
+.modal-footer {
+  padding: var(--space-4) var(--space-6) var(--space-5); display: flex; justify-content: flex-end; gap: var(--space-3);
+  border-top: 1px solid var(--divider);
+}
+/* === BUTTONS (Estilo iOS) === */
+.btn-ghost {
+  padding: var(--space-2) var(--space-5); border-radius: var(--radius-md); font-size: var(--text-base); font-weight: 500;
+  border: 1px solid var(--border-subtle); color: var(--text-primary);
+  transition: all 150ms ease;
+}
+.btn-ghost:hover { background: var(--hover); }
+.btn-primary {
+  padding: var(--space-2) var(--space-5); border-radius: var(--radius-md); font-size: var(--text-base); font-weight: 600;
+  background: var(--accent); color: #FFFFFF; transition: all 150ms ease;
+}
+.btn-primary:hover { opacity: 0.85; }
+.btn-primary:active { opacity: 0.7; transform: scale(0.98); }
+.btn-danger {
+  padding: var(--space-2) var(--space-5); border-radius: var(--radius-md); font-size: var(--text-base); font-weight: 500;
+  background: var(--accent-red); color: #FFFFFF; transition: all 150ms ease;
+}
+.btn-danger:hover { opacity: 0.85; }
+.btn-danger:active { opacity: 0.7; transform: scale(0.98); }
+
+/* === FORM FIELDS (iOS Style) === */
+.field-group { margin-bottom: var(--space-4); }
+.field-group label {
+  display: block; font-size: var(--text-xs); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--text-secondary); margin-bottom: var(--space-2);
+}
+.field-group input, .field-group textarea {
+  width: 100%; padding: var(--space-3); border-radius: var(--radius-md);
+  background: var(--input-bg); border: 1px solid var(--border-subtle);
+  color: var(--text-primary); font-size: var(--text-base);
+  transition: all 150ms ease;
+}
+.field-group input:focus, .field-group textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-faint); }
+.field-group input::placeholder, .field-group textarea::placeholder { color: var(--text-secondary); }
+
+
+
+/* === TOAST (iOS Notification Style) === */
+.toast {
+  position: fixed; bottom: var(--space-6); right: var(--space-6);
+  background: var(--toast-bg); border: 1px solid var(--border-toast);
+  border-radius: var(--radius-lg); padding: var(--space-3) var(--space-5);
+  display: flex; align-items: center; gap: var(--space-3);
+  font-size: var(--text-base); font-weight: 500; color: var(--text-primary);
+  box-shadow: var(--shadow-md); z-index: 200;
+  animation: toastIn 250ms cubic-bezier(0.32,0.72,0,1);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+}
+.toast .toast-icon { color: var(--accent-green); }
+.toast.fade-out { animation: fadeOut 300ms ease forwards; }
+
+/* === POPOVER (iOS Context Menu) === */
+.text-popover {
+  position: fixed; z-index: 90;
+  background: var(--modal-bg); border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-1); display: flex; gap: var(--space-1);
+  animation: popoverIn 150ms cubic-bezier(0.32,0.72,0,1);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+}
+.text-popover button {
+  padding: var(--space-2); border-radius: var(--radius-sm); color: var(--text-secondary);
+  transition: all 150ms ease;
+}
+.text-popover button:hover { background: var(--hover); color: var(--accent); }
+
+/* === SETTINGS PANEL (iOS System Settings) === */
+.settings-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-3) 0; border-bottom: 1px solid var(--divider);
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-row label { font-size: var(--text-base); color: var(--text-body); font-weight: 500; }
+.settings-row select, .settings-row input[type=range] {
+  background: var(--input-bg); border: 1px solid var(--border-subtle);
+  color: var(--text-primary); border-radius: var(--radius-sm); padding: var(--space-1) var(--space-2); font-size: var(--text-sm);
+}
+.font-size-ctrl { display: flex; align-items: center; gap: var(--space-2); }
+.font-size-ctrl button {
+  width: 32px; height: 32px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle); display: flex;
+  align-items: center; justify-content: center;
+  color: var(--accent); font-size: var(--text-lg); font-weight: 600;
+  transition: all 150ms ease;
+}
+.font-size-ctrl button:hover { background: var(--hover); }
+.font-size-ctrl button:active { transform: scale(0.95); }
+.font-size-ctrl span { font-size: var(--text-sm); color: var(--text-primary); min-width: 36px; text-align: center; font-weight: 500; }
+
+/* === IMPORT CONFLICT === */
+.conflict-item {
+  padding: var(--space-3) 0; border-bottom: 1px solid var(--divider);
+}
+.conflict-item:last-child { border-bottom: none; }
+.conflict-item .name { font-weight: 600; color: var(--text-primary); }
+.conflict-item .folder-tag { font-size: var(--text-xs); color: var(--text-secondary); }
+
+/* === DRAWER OVERLAY === */
+.drawer-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  z-index: 25; display: none;
+  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+}
+
+/* === MOBILE TOGGLE === */
+.mobile-toggle {
+  display: none; position: fixed; top: var(--space-3); left: var(--space-3); z-index: 35;
+  width: 40px; height: 40px; border-radius: var(--radius-md);
+  background: var(--modal-bg); color: var(--text-primary);
+  align-items: center; justify-content: center;
+  box-shadow: var(--shadow-sm); border: 1px solid var(--border-subtle);
+}
+
+/* === ANIMATIONS (iOS Spring) === */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes popoverIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+@keyframes toastIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+/* === RESPONSIVE (iOS Adaptive) === */
+@media (max-width: 768px) {
+  .sidebar { position: fixed; left: -240px; top: 0; bottom: 0; transition: left 250ms cubic-bezier(0.32,0.72,0,1); z-index: 30; }
+  .sidebar.open { left: 0; }
+  .drawer-overlay { display: block; opacity: 0; pointer-events: none; transition: opacity 200ms ease; }
+  .drawer-overlay.visible { opacity: 1; pointer-events: auto; }
+  .notes-list { min-width: 100%; }
+  .notes-list.hidden-mobile { display: none; }
+  .mobile-toggle { display: flex; }
+  .editor-header { padding-left: 56px; }
+  .markdown-body { padding: var(--space-4); }
+  .editor-textarea { padding: var(--space-4); }
+}
+
+/* === INLINE RENAME === */
+.rename-input {
+  background: var(--input-bg); border: 1px solid var(--accent);
+  border-radius: var(--radius-sm); padding: var(--space-1) var(--space-2); color: var(--text-primary);
+  font-size: var(--text-base); width: 100%;
+  box-shadow: 0 0 0 3px var(--accent-faint);
+}
+
+/* === HIGHLIGHT.JS OVERRIDES (Xcode Theme) === */
+.hljs { background: transparent !important; color: var(--code-plain) !important; }
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-built_in,
+.hljs-deletion { color: var(--code-keyword) !important; font-weight: 500; }
+.hljs-string,
+.hljs-attr,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition,
+.hljs-template-tag,
+.hljs-template-variable { color: var(--code-string) !important; }
+.hljs-comment,
+.hljs-quote,
+.hljs-meta { color: var(--code-comment) !important; font-style: italic; }
+.hljs-title,
+.hljs-section,
+.hljs-title.function_ { color: var(--code-function) !important; font-weight: 500; }
+.hljs-variable,
+.hljs-name,
+.hljs-tag { color: var(--code-variable) !important; }
+.hljs-number,
+.hljs-literal { color: var(--code-number) !important; }
+.hljs-type,
+.hljs-title.class_,
+.hljs-params { color: var(--code-type) !important; }
+.hljs-attribute { color: var(--code-attr) !important; }
+.hljs-regexp,
+.hljs-link { color: var(--code-string) !important; }
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: 700; }
+
+/* === SELECTION === */
+::selection { background: var(--accent-faint); color: var(--text-primary); }
+::-moz-selection { background: var(--accent-faint); color: var(--text-primary); }
+
+
+/* === FILL BUTTON (Code Blocks) === */
+.cb-fill {
+  display: none;
+  align-items: center; gap: var(--space-1);
+  color: var(--accent) !important; font-weight: 500;
+}
+.code-block-wrapper.has-fill-fields .cb-fill {
+  display: inline-flex;
+}
+
+/* === FILL MODAL FIELDS === */
+.fill-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.fill-field-group + .fill-field-group {
+  margin-top: var(--space-3);
+}
+.fill-field-group label {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.fill-field-group input {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-base);
+  color: var(--text-primary);
+  background: var(--input-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  transition: all 150ms ease;
+  font-family: inherit;
+}
+.fill-field-group input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-faint);
+  outline: none;
+}
+.fill-field-group input::placeholder {
+  color: var(--text-tertiary);
+}
+.fill-field-remove {
+  color: var(--accent-red);
+  font-size: var(--text-xs);
+  padding: var(--space-1) 0;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 150ms;
+  align-self: flex-end;
+}
+.fill-field-remove:hover {
+  opacity: 1;
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- MOBILE TOGGLE -->
+  <button class="mobile-toggle" @click="sidebarOpen = !sidebarOpen" aria-label="Menu">
+    <i data-lucide="menu" style="width:20px;height:20px;"></i>
+  </button>
+
+  <!-- DRAWER OVERLAY -->
+  <div class="drawer-overlay" :class="{ visible: sidebarOpen }" @click="sidebarOpen = false"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" :class="{ open: sidebarOpen }">
+    <div class="sidebar-header">
+      <span class="app-title">MD Viewer</span>
+      <button @click="createFolder" aria-label="Nova pasta">
+        <i data-lucide="plus" style="width:18px;height:18px;"></i>
+      </button>
+    </div>
+    <div class="folder-list">
+      <div class="folder-item" :class="{ active: activeFolderId === null }"
+           @click="activeFolderId = null; sidebarOpen = false">
+        <i data-lucide="inbox" class="folder-icon" style="width:18px;height:18px;"></i>
+        <span class="folder-name">Todas as notas</span>
+        <span class="folder-count">{{ files.length }}</span>
+      </div>
+      <div v-for="f in folders" :key="f.id" class="folder-item" :class="{ active: activeFolderId === f.id }"
+           @click="selectFolder(f.id)" @dblclick.prevent="startRenameFolder(f)">
+        <i data-lucide="folder" class="folder-icon" style="width:18px;height:18px;"></i>
+        <template v-if="renamingFolderId === f.id">
+          <input class="rename-input" v-model="renamingFolderName"
+                 @keydown.enter="confirmRenameFolder" @keydown.escape="cancelRenameFolder"
+                 @blur="confirmRenameFolder" ref="folderRenameInput">
+        </template>
+        <template v-else>
+          <span class="folder-name">{{ f.name }}</span>
+          <span class="folder-count">{{ filesByFolder(f.id).length }}</span>
+        </template>
+        <div class="folder-actions" v-if="renamingFolderId !== f.id">
+          <button @click.stop="startRenameFolder(f)" aria-label="Renomear pasta">
+            <i data-lucide="pencil" style="width:14px;height:14px;"></i>
+          </button>
+          <button @click.stop="deleteFolder(f.id)" aria-label="Excluir pasta">
+            <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- NOTES LIST -->
+  <section class="notes-list" :class="{ 'hidden-mobile': activeFileId && isMobile }">
+    <div class="notes-header">
+      <span class="notes-title">{{ currentFolderName }}</span>
+      <div class="header-actions">
+        <button @click="createFile" aria-label="Nova nota">
+          <i data-lucide="square-pen" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+    </div>
+    <div class="notes-search">
+      <input type="text" v-model="searchQuery" placeholder="Buscar notas...">
+    </div>
+    <div class="notes-items" v-if="filteredFiles.length">
+      <div v-for="f in filteredFiles" :key="f.id" class="note-item" :class="{ active: activeFileId === f.id }"
+           @click="openFile(f.id)">
+        <div class="note-item-title">{{ getTitle(f) }}</div>
+        <div class="note-item-meta">
+          <span class="note-date">{{ formatDate(f.updatedAt) }}</span>
+          &mdash; {{ getPreview(f) }}
+        </div>
+        <div class="note-item-folder">
+          <i data-lucide="folder" style="width:12px;height:12px;"></i>
+          {{ getFolderName(f.folder) }}
+        </div>
+      </div>
+    </div>
+    <div v-else class="empty-state">
+      <i data-lucide="file-text" class="empty-icon" style="width:48px;height:48px;"></i>
+      <p>Nenhuma nota</p>
+    </div>
+  </section>
+
+  <!-- EDITOR PANE -->
+  <main class="editor-pane" v-if="activeFile">
+    <div class="editor-header">
+      <div class="left-actions">
+        <button v-if="isMobile" @click="activeFileId = null" aria-label="Voltar">
+          <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+        </button>
+        <button @click="deleteFile(activeFile.id)" aria-label="Excluir nota">
+          <i data-lucide="trash-2" style="width:18px;height:18px;"></i>
+        </button>
+        <button @click="showSettings = true" aria-label="Tamanho da fonte">
+          <i data-lucide="a-large-small" style="width:18px;height:18px;"></i>
+        </button>
+        <button @click="exportSingle" aria-label="Compartilhar">
+          <i data-lucide="share" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+      <div class="right-actions">
+        <button @click="importProject" aria-label="Importar projeto">
+          <i data-lucide="upload" style="width:18px;height:18px;"></i>
+        </button>
+        <button @click="exportProject" aria-label="Exportar projeto">
+          <i data-lucide="download" style="width:18px;height:18px;"></i>
+        </button>
+        <button @click="toggleMode" :aria-label="editMode ? 'Visualizar' : 'Editar'">
+          <i :data-lucide="editMode ? 'eye' : 'edit'" style="width:18px;height:18px;"></i>
+        </button>
+        <span class="edit-status">{{ editMode ? 'Editando' : 'Editado' }}</span>
+      </div>
+    </div>
+    <div class="editor-body">
+      <textarea v-if="editMode" class="editor-textarea" v-model="activeFile.content"
+                @input="onContentChange" spellcheck="false"></textarea>
+      <div v-else class="markdown-body" ref="markdownBody" v-html="renderedMarkdown"
+           @mouseup="onTextSelect" @mousedown="hidePopover"></div>
+    </div>
+  </main>
+
+  <!-- EMPTY EDITOR STATE -->
+  <main class="editor-pane" v-else>
+    <div class="editor-header">
+      <div class="left-actions">
+        <button v-if="isMobile" @click="sidebarOpen = true" aria-label="Menu">
+          <i data-lucide="menu" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+      <div class="right-actions">
+        <button @click="toggleTheme" aria-label="Alternar tema">
+          <i :data-lucide="isDark ? 'sun' : 'moon'" style="width:18px;height:18px;"></i>
+        </button>
+        <button @click="importProject" aria-label="Importar projeto">
+          <i data-lucide="upload" style="width:18px;height:18px;"></i>
+        </button>
+        <button @click="exportProject" aria-label="Exportar projeto">
+          <i data-lucide="download" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+    </div>
+    <div class="empty-state">
+      <i data-lucide="edit-3" class="empty-icon" style="width:48px;height:48px;"></i>
+      <p>Selecione ou crie uma nota</p>
+    </div>
+  </main>
+
+  <!-- TEXT SELECTION POPOVER -->
+  <div v-if="popover.visible" class="text-popover" :style="{ top: popover.y + 'px', left: popover.x + 'px' }">
+    <button @click="addFillableFromSelection" aria-label="Adicionar campo"
+            style="display:flex;align-items:center;gap:6px;white-space:nowrap;padding:var(--space-2) var(--space-3);font-size:var(--text-sm);font-weight:500;">
+      <span style="font-size:14px;">📝</span> Adicionar campo
+    </button>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div v-if="showSettings" class="modal-overlay" @click.self="showSettings = false">
+    <div class="modal" style="max-width: 400px;">
+      <div class="modal-header">
+        <h2>Configuracoes</h2>
+        <button @click="showSettings = false" aria-label="Fechar">
+          <i data-lucide="x" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-row">
+          <label>Tema</label>
+          <button class="btn-ghost" @click="toggleTheme" aria-label="Alternar tema">
+            <span>{{ isDark ? 'Escuro' : 'Claro' }}</span>
+          </button>
+        </div>
+        <div class="settings-row">
+          <label>Tamanho da fonte</label>
+          <div class="font-size-ctrl">
+            <button @click="changeFontSize(-1)" aria-label="Diminuir fonte">&minus;</button>
+            <span>{{ fontSize }}px</span>
+            <button @click="changeFontSize(1)" aria-label="Aumentar fonte">+</button>
+          </div>
+        </div>
+        <div class="settings-row">
+          <label>Fonte do corpo</label>
+          <select v-model="fontFamily" @change="saveFontFamily">
+            <option value="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif">SF Pro (padrão)</option>
+            <option value="'Georgia', 'Times New Roman', serif">Georgia (serif)</option>
+            <option value="'SF Mono', 'Fira Code', 'Consolas', monospace">SF Mono (mono)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMPORT CONFLICT MODAL -->
+  <div v-if="importConflict.visible" class="modal-overlay" @click.self="importConflict.visible = false">
+    <div class="modal" style="max-width: 440px;">
+      <div class="modal-header">
+        <h2>Conflito de importacao</h2>
+        <button @click="importConflict.visible = false" aria-label="Fechar">
+          <i data-lucide="x" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom:12px;color:var(--text-secondary);font-size:14px;">
+          {{ importConflict.conflicts.length }} nota(s) ja existem. O que deseja fazer?
+        </p>
+        <div v-for="c in importConflict.conflicts" :key="c.id" class="conflict-item">
+          <span class="name">{{ c.name }}</span>
+          <span class="folder-tag"> &middot; {{ c.folder || 'Sem pasta' }}</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" @click="importConflict.visible = false">Cancelar</button>
+        <button class="btn-ghost" @click="resolveImport('keep')">Manter ambos</button>
+        <button class="btn-danger" @click="resolveImport('replace')">Substituir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RENAME NOTE MODAL -->
+  <div v-if="renameNote.visible" class="modal-overlay" @click.self="renameNote.visible = false">
+    <div class="modal" style="max-width:380px;">
+      <div class="modal-header">
+        <h2>Renomear nota</h2>
+        <button @click="renameNote.visible = false" aria-label="Fechar">
+          <i data-lucide="x" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label>Nome</label>
+          <input type="text" v-model="renameNote.name" @keydown.enter="confirmRenameNote">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" @click="renameNote.visible = false">Cancelar</button>
+        <button class="btn-primary" @click="confirmRenameNote">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILL MODAL -->
+  <div v-if="fillModal.visible" class="modal-overlay" @click.self="fillModal.visible = false">
+    <div class="modal" style="max-width:440px;">
+      <div class="modal-header">
+        <h2>Preencher campos</h2>
+        <button @click="fillModal.visible = false" aria-label="Fechar">
+          <i data-lucide="x" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div v-for="field in fillModal.fields" :key="field.id" class="fill-field-group">
+          <label>{{ field.text }}</label>
+          <input type="text" v-model="field.value" :placeholder="'Valor para ' + field.text">
+          <button class="fill-field-remove" @click="removeFillField(field.id)">remover campo</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" @click="fillModal.visible = false">Cancelar</button>
+        <button class="btn-primary" @click="copyFilledCode">Copiar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div v-if="toast.visible" class="toast" :class="{ 'fade-out': toast.fading }">
+    <i data-lucide="check-circle" class="toast-icon" style="width:18px;height:18px;"></i>
+    <span>{{ toast.message }}</span>
+  </div>
+</div>
+
+<script>
+const { createApp, ref, computed, watch, nextTick, onMounted, onUnmounted } = Vue;
+
+function uuid() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+
+
+const LS_FILES = 'mdv_files';
+const LS_FOLDERS = 'mdv_folders';
+const LS_SETTINGS = 'mdv_settings';
+const LS_FILLABLE = 'mdv_fillable';
+
+function loadLS(key, fallback) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+  catch { return fallback; }
+}
+function saveLS(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+createApp({
+  setup() {
+    // --- State ---
+    const files = ref(loadLS(LS_FILES, []));
+    const folders = ref(loadLS(LS_FOLDERS, [{ id: uuid(), name: 'Notas' }]));
+    const settings = loadLS(LS_SETTINGS, {
+      dark: window.matchMedia('(prefers-color-scheme: dark)').matches !== false,
+      fontSize: 15,
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif"
+    });
+
+    const isDark = ref(settings.dark);
+    const fontSize = ref(settings.fontSize);
+    const fontFamily = ref(settings.fontFamily);
+    const activeFolderId = ref(null);
+    const activeFileId = ref(null);
+    const editMode = ref(false);
+    const searchQuery = ref('');
+    const sidebarOpen = ref(false);
+    const showSettings = ref(false);
+    const markdownBody = ref(null);
+
+    // Folder renaming
+    const renamingFolderId = ref(null);
+    const renamingFolderName = ref('');
+
+    // Toast
+    const toast = ref({ visible: false, message: '', fading: false });
+    let toastTimer = null;
+
+    function showToast(msg) {
+      if (toastTimer) clearTimeout(toastTimer);
+      toast.value = { visible: true, message: msg, fading: false };
+      nextTick(() => lucide.createIcons());
+      toastTimer = setTimeout(() => {
+        toast.value.fading = true;
+        setTimeout(() => { toast.value.visible = false; }, 300);
+      }, 2200);
+    }
+
+    // Popover
+    const popover = ref({ visible: false, x: 0, y: 0, text: '' });
+    const selectedText = ref('');
+
+    // Import conflict
+    const importConflict = ref({ visible: false, conflicts: [], pendingData: null });
+
+    // Rename note
+    const renameNote = ref({ visible: false, name: '', fileId: '' });
+
+    // Fillable fields
+    const fillableFields = ref(loadLS(LS_FILLABLE, []));
+    const fillModal = ref({ visible: false, fields: [], blockHash: '', blockRaw: '' });
+
+    // --- Computed ---
+    const isMobile = ref(window.innerWidth <= 768);
+    function onResize() { isMobile.value = window.innerWidth <= 768; }
+
+    const activeFile = computed(() => files.value.find(f => f.id === activeFileId.value) || null);
+
+    const currentFolderName = computed(() => {
+      if (activeFolderId.value === null) return 'Todas as notas';
+      const f = folders.value.find(x => x.id === activeFolderId.value);
+      return f ? f.name : 'Todas as notas';
+    });
+
+
+    const filteredFiles = computed(() => {
+      let list = activeFolderId.value === null
+        ? files.value
+        : files.value.filter(f => f.folder === activeFolderId.value);
+      if (searchQuery.value) {
+        const q = searchQuery.value.toLowerCase();
+        list = list.filter(f => f.name.toLowerCase().includes(q) || f.content.toLowerCase().includes(q));
+      }
+      return list.slice().sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    });
+
+    const renderedMarkdown = computed(() => {
+      if (!activeFile.value) return '';
+      const raw = activeFile.value.content || '';
+      marked.setOptions({
+        highlight: (code, lang) => {
+          if (lang && hljs.getLanguage(lang)) {
+            try { return hljs.highlight(code, { language: lang }).value; } catch {}
+          }
+          return hljs.highlightAuto(code).value;
+        },
+        breaks: true, gfm: true
+      });
+
+      const renderer = new marked.Renderer();
+      renderer.code = function(obj) {
+        let text, lang;
+        if (typeof obj === 'object' && obj !== null) {
+          text = obj.text || '';
+          lang = obj.lang || '';
+        } else {
+          text = obj || '';
+          lang = arguments[1] || '';
+        }
+        const highlighted = lang && hljs.getLanguage(lang)
+          ? hljs.highlight(text, { language: lang }).value
+          : hljs.highlightAuto(text).value;
+        const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        return `<div class="code-block-wrapper" data-raw="${escaped}">
+          <div class="code-block-header">
+            <span class="code-block-lang">${lang || 'code'}</span>
+            <div class="code-block-actions">
+              <button onclick="window.__copyCode(this)" aria-label="Copiar codigo"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+              <button class="cb-fill" onclick="window.__openFillModal(this)" aria-label="Preencher"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Preencher</button>
+            </div>
+          </div>
+          <pre><code class="hljs">${highlighted}</code></pre>
+        </div>`;
+      };
+
+      return marked.parse(raw, { renderer });
+    });
+
+    // --- Methods ---
+    function persist() {
+      saveLS(LS_FILES, files.value);
+      saveLS(LS_FOLDERS, folders.value);
+    }
+
+    function persistSettings() {
+      saveLS(LS_SETTINGS, { dark: isDark.value, fontSize: fontSize.value, fontFamily: fontFamily.value });
+    }
+
+    function applyTheme() {
+      document.documentElement.className = isDark.value ? '' : 'light';
+      const link = document.getElementById('hljs-theme');
+      link.href = isDark.value
+        ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css'
+        : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css';
+    }
+
+    function applyFont() {
+      document.documentElement.style.setProperty('--font-size', fontSize.value + 'px');
+      document.documentElement.style.setProperty('--font-family', fontFamily.value);
+    }
+
+    function toggleTheme() { isDark.value = !isDark.value; applyTheme(); persistSettings(); }
+    function changeFontSize(d) {
+      const v = fontSize.value + d;
+      if (v >= 12 && v <= 24) { fontSize.value = v; applyFont(); persistSettings(); }
+    }
+    function saveFontFamily() { applyFont(); persistSettings(); }
+
+    function toggleMode() { editMode.value = !editMode.value; nextTick(refreshIcons); }
+
+    function createFolder() {
+      const name = 'Nova pasta';
+      folders.value.push({ id: uuid(), name });
+      persist();
+      nextTick(refreshIcons);
+    }
+
+    function selectFolder(id) {
+      activeFolderId.value = id;
+      sidebarOpen.value = false;
+    }
+
+    function startRenameFolder(f) {
+      renamingFolderId.value = f.id;
+      renamingFolderName.value = f.name;
+      nextTick(() => {
+        const el = document.querySelector('.rename-input');
+        if (el) { el.focus(); el.select(); }
+      });
+    }
+    function confirmRenameFolder() {
+      if (renamingFolderId.value && renamingFolderName.value.trim()) {
+        const f = folders.value.find(x => x.id === renamingFolderId.value);
+        if (f) f.name = renamingFolderName.value.trim();
+        persist();
+      }
+      renamingFolderId.value = null;
+    }
+    function cancelRenameFolder() { renamingFolderId.value = null; }
+
+    function deleteFolder(id) {
+      files.value.forEach(f => { if (f.folder === id) f.folder = null; });
+      folders.value = folders.value.filter(f => f.id !== id);
+      if (activeFolderId.value === id) activeFolderId.value = null;
+      persist();
+    }
+
+    function filesByFolder(folderId) { return files.value.filter(f => f.folder === folderId); }
+
+    function createFile() {
+      const id = uuid();
+      const folderId = activeFolderId.value || (folders.value.length ? folders.value[0].id : null);
+      files.value.push({
+        id, name: 'Nova nota', content: '# Nova nota\n\n',
+        folder: folderId, createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      activeFileId.value = id;
+      editMode.value = true;
+      persist();
+      nextTick(refreshIcons);
+    }
+
+    function openFile(id) {
+      activeFileId.value = id;
+      editMode.value = false;
+      nextTick(refreshIcons);
+    }
+
+    function deleteFile(id) {
+      files.value = files.value.filter(f => f.id !== id);
+      if (activeFileId.value === id) activeFileId.value = null;
+      persist();
+      nextTick(refreshIcons);
+    }
+
+    function onContentChange() {
+      if (activeFile.value) {
+        activeFile.value.updatedAt = new Date().toISOString();
+        // Update name from first heading
+        const m = activeFile.value.content.match(/^#\s+(.+)/m);
+        if (m) activeFile.value.name = m[1].trim();
+        persist();
+      }
+    }
+
+    function getTitle(f) { return f.name || 'Sem titulo'; }
+    function getPreview(f) {
+      const lines = (f.content || '').split('\n').filter(l => l.trim() && !l.startsWith('#'));
+      return (lines[0] || '').substring(0, 60) || 'Sem conteudo';
+    }
+    function formatDate(d) {
+      if (!d) return '';
+      const dt = new Date(d);
+      return dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+    }
+    function getFolderName(folderId) {
+      if (!folderId) return 'Sem pasta';
+      const f = folders.value.find(x => x.id === folderId);
+      return f ? f.name : 'Sem pasta';
+    }
+
+    // --- Prompt Vars ---
+    window.__copyCode = function(btn) {
+      const wrapper = btn.closest('.code-block-wrapper');
+      const raw = wrapper.getAttribute('data-raw');
+      const decoded = raw.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+      navigator.clipboard.writeText(decoded);
+      showToast('Copiado com sucesso');
+    };
+
+
+
+    // --- Text selection popover ---
+    function onTextSelect(e) {
+      if (!e.target.closest || !e.target.closest('.code-block-wrapper')) return;
+      const sel = window.getSelection();
+      const text = sel ? sel.toString().trim() : '';
+      if (text.length > 0) {
+        selectedText.value = text;
+        const range = sel.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        popover.value = {
+          visible: true,
+          x: rect.left + rect.width / 2 - 70,
+          y: rect.top - 44,
+          text
+        };
+        nextTick(refreshIcons);
+      }
+    }
+
+    function hidePopover() { popover.value.visible = false; }
+
+    function copySelection() {
+      navigator.clipboard.writeText(selectedText.value);
+      popover.value.visible = false;
+      showToast('Copiado com sucesso');
+    }
+
+    function quoteSelection() {
+      if (activeFile.value) {
+        const quoted = selectedText.value.split('\n').map(l => '> ' + l).join('\n');
+        activeFile.value.content += '\n\n' + quoted + '\n';
+        activeFile.value.updatedAt = new Date().toISOString();
+        persist();
+        popover.value.visible = false;
+        showToast('Citacao adicionada');
+      }
+    }
+
+    // --- Fillable Fields ---
+    function blockHash(content) {
+      const str = content.substring(0, 80);
+      try { return btoa(unescape(encodeURIComponent(str))); } catch { return btoa(str.replace(/[^\x00-\x7F]/g, '')); }
+    }
+
+    function persistFillable() {
+      saveLS(LS_FILLABLE, fillableFields.value);
+    }
+
+    function addFillableFromSelection() {
+      if (!selectedText.value || !activeFile.value) return;
+      const sel = window.getSelection();
+      if (!sel.rangeCount) return;
+      const node = sel.anchorNode;
+      const wrapper = node && node.nodeType === 3
+        ? node.parentElement.closest('.code-block-wrapper')
+        : node && node.closest ? node.closest('.code-block-wrapper') : null;
+      if (!wrapper) {
+        showToast('Selecione texto dentro de um bloco de codigo');
+        popover.value.visible = false;
+        return;
+      }
+      const raw = wrapper.getAttribute('data-raw');
+      const decoded = raw.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+      const hash = blockHash(decoded);
+      const exists = fillableFields.value.some(
+        f => f.fileId === activeFile.value.id && f.blockHash === hash && f.text === selectedText.value
+      );
+      if (exists) {
+        showToast('Campo ja existe');
+        popover.value.visible = false;
+        return;
+      }
+      fillableFields.value.push({
+        id: uuid(),
+        text: selectedText.value,
+        fileId: activeFile.value.id,
+        blockHash: hash,
+        value: '',
+        createdAt: new Date().toISOString()
+      });
+      persistFillable();
+      popover.value.visible = false;
+      sel.removeAllRanges();
+      nextTick(() => applyFillButtons());
+      showToast('Campo adicionado');
+    }
+
+    function applyFillButtons() {
+      const mbEl = markdownBody.value;
+      if (!mbEl || !activeFile.value) return;
+      const fileFields = fillableFields.value.filter(f => f.fileId === activeFile.value.id);
+      mbEl.querySelectorAll('.code-block-wrapper').forEach(wrapper => {
+        const raw = wrapper.getAttribute('data-raw');
+        const decoded = raw.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+        const hash = blockHash(decoded);
+        const hasFields = fileFields.some(f => f.blockHash === hash);
+        wrapper.classList.toggle('has-fill-fields', hasFields);
+      });
+    }
+
+    window.__openFillModal = function(btn) {
+      const wrapper = btn.closest('.code-block-wrapper');
+      const raw = wrapper.getAttribute('data-raw');
+      const decoded = raw.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+      const hash = blockHash(decoded);
+      const fields = fillableFields.value
+        .filter(f => f.fileId === activeFile.value.id && f.blockHash === hash)
+        .map(f => ({ id: f.id, text: f.text, value: f.value || '' }));
+      if (!fields.length) return;
+      fillModal.value = { visible: true, fields, blockHash: hash, blockRaw: decoded };
+      nextTick(refreshIcons);
+    };
+
+    function removeFillField(fieldId) {
+      fillableFields.value = fillableFields.value.filter(f => f.id !== fieldId);
+      persistFillable();
+      fillModal.value.fields = fillModal.value.fields.filter(f => f.id !== fieldId);
+      if (!fillModal.value.fields.length) {
+        fillModal.value.visible = false;
+      }
+      nextTick(() => applyFillButtons());
+      showToast('Campo removido');
+    }
+
+    function copyFilledCode() {
+      const fm = fillModal.value;
+      let text = fm.blockRaw;
+      fm.fields.forEach(f => {
+        if (f.value) {
+          const re = new RegExp(f.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+          text = text.replace(re, f.value);
+        }
+      });
+      // Save values back to fillableFields
+      fm.fields.forEach(f => {
+        const stored = fillableFields.value.find(sf => sf.id === f.id);
+        if (stored) stored.value = f.value;
+      });
+      persistFillable();
+      navigator.clipboard.writeText(text);
+      fillModal.value.visible = false;
+      showToast('Copiado com sucesso');
+    }
+
+    // --- Import / Export ---
+    function exportProject() {
+      const data = {
+        exportedAt: new Date().toISOString(),
+        files: files.value.map(f => ({
+          id: f.id, name: f.name, folder: getFolderName(f.folder),
+          content: f.content, updatedAt: f.updatedAt
+        }))
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'mdviewer-export.json'; a.click();
+      URL.revokeObjectURL(url);
+      showToast('Projeto exportado');
+    }
+
+    function exportSingle() {
+      if (!activeFile.value) return;
+      const blob = new Blob([activeFile.value.content], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = (activeFile.value.name || 'nota') + '.md'; a.click();
+      URL.revokeObjectURL(url);
+      showToast('Nota exportada');
+    }
+
+    function importProject() {
+      const input = document.createElement('input');
+      input.type = 'file'; input.accept = '.json';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          try {
+            const data = JSON.parse(ev.target.result);
+            if (!data.files || !Array.isArray(data.files)) { showToast('Formato invalido'); return; }
+            processImport(data);
+          } catch { showToast('Erro ao ler arquivo'); }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+
+    function processImport(data) {
+      const conflicts = [];
+      const newFiles = [];
+      data.files.forEach(imported => {
+        const existing = files.value.find(f => f.id === imported.id);
+        if (existing) {
+          conflicts.push(imported);
+        } else {
+          newFiles.push(imported);
+        }
+      });
+
+      // Ensure folders exist
+      data.files.forEach(imported => {
+        if (imported.folder && typeof imported.folder === 'string') {
+          const existing = folders.value.find(f => f.name === imported.folder);
+          if (!existing) {
+            folders.value.push({ id: uuid(), name: imported.folder });
+          }
+        }
+      });
+
+      // Add non-conflicting files
+      newFiles.forEach(imported => {
+        const folderId = resolveFolderId(imported.folder);
+        files.value.push({
+          id: imported.id, name: imported.name, content: imported.content,
+          folder: folderId, createdAt: imported.updatedAt || new Date().toISOString(),
+          updatedAt: imported.updatedAt || new Date().toISOString()
+        });
+      });
+
+      if (conflicts.length) {
+        importConflict.value = { visible: true, conflicts, pendingData: data };
+      } else {
+        persist();
+        showToast('Importado com sucesso');
+        nextTick(refreshIcons);
+      }
+    }
+
+    function resolveFolderId(folderName) {
+      if (!folderName) return null;
+      const f = folders.value.find(x => x.name === folderName);
+      return f ? f.id : null;
+    }
+
+    function resolveImport(action) {
+      const conflicts = importConflict.value.conflicts;
+      if (action === 'replace') {
+        conflicts.forEach(imported => {
+          const idx = files.value.findIndex(f => f.id === imported.id);
+          const folderId = resolveFolderId(imported.folder);
+          if (idx >= 0) {
+            files.value[idx] = {
+              id: imported.id, name: imported.name, content: imported.content,
+              folder: folderId, createdAt: imported.updatedAt || new Date().toISOString(),
+              updatedAt: imported.updatedAt || new Date().toISOString()
+            };
+          }
+        });
+      } else if (action === 'keep') {
+        conflicts.forEach(imported => {
+          const folderId = resolveFolderId(imported.folder);
+          files.value.push({
+            id: uuid(), name: imported.name + ' (importado)', content: imported.content,
+            folder: folderId, createdAt: new Date().toISOString(),
+            updatedAt: imported.updatedAt || new Date().toISOString()
+          });
+        });
+      }
+      importConflict.value.visible = false;
+      persist();
+      showToast('Importado com sucesso');
+      nextTick(refreshIcons);
+    }
+
+    // --- Rename note ---
+    function startRenameNote() {
+      if (!activeFile.value) return;
+      renameNote.value = { visible: true, name: activeFile.value.name, fileId: activeFile.value.id };
+    }
+    function confirmRenameNote() {
+      const f = files.value.find(x => x.id === renameNote.value.fileId);
+      if (f && renameNote.value.name.trim()) {
+        f.name = renameNote.value.name.trim();
+        persist();
+      }
+      renameNote.value.visible = false;
+    }
+
+    // --- Keyboard shortcuts ---
+    function onKeydown(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        e.preventDefault();
+        if (activeFile.value) toggleMode();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        createFile();
+      }
+    }
+
+    // Force click-outside to close popover
+    function onDocClick(e) {
+      if (popover.value.visible) {
+        const sel = window.getSelection();
+        if (!sel || sel.toString().trim().length === 0) {
+          popover.value.visible = false;
+        }
+      }
+    }
+
+    function refreshIcons() {
+      try { lucide.createIcons(); } catch {}
+    }
+
+    // --- Lifecycle ---
+    onMounted(() => {
+      applyTheme();
+      applyFont();
+      refreshIcons();
+      window.addEventListener('resize', onResize);
+      window.addEventListener('keydown', onKeydown);
+      document.addEventListener('click', onDocClick);
+    });
+
+    onUnmounted(() => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('keydown', onKeydown);
+      document.removeEventListener('click', onDocClick);
+    });
+
+    // Re-apply fill buttons after markdown render
+    watch([renderedMarkdown, editMode], () => {
+      if (!editMode.value) {
+        nextTick(() => applyFillButtons());
+      }
+    });
+
+    // Watch for icon refresh after reactivity settles
+    watch([activeFileId, editMode, activeFolderId, showSettings, () => fillModal.value.visible, () => importConflict.value.visible, () => toast.value.visible], () => {
+      nextTick(refreshIcons);
+    });
+
+    return {
+      files, folders, isDark, fontSize, fontFamily,
+      activeFolderId, activeFileId, activeFile, editMode,
+      searchQuery, sidebarOpen, showSettings, isMobile,
+      currentFolderName, filteredFiles, renderedMarkdown,
+      markdownBody,
+      renamingFolderId, renamingFolderName,
+      toast, popover, selectedText, importConflict, renameNote,
+      fillableFields, fillModal,
+      // Methods
+      toggleTheme, changeFontSize, saveFontFamily, toggleMode,
+      createFolder, selectFolder, startRenameFolder, confirmRenameFolder, cancelRenameFolder,
+      deleteFolder, filesByFolder,
+      createFile, openFile, deleteFile, onContentChange,
+      getTitle, getPreview, formatDate, getFolderName,
+      onTextSelect, hidePopover, copySelection, quoteSelection,
+      addFillableFromSelection, removeFillField, copyFilledCode,
+      exportProject, exportSingle, importProject, resolveImport,
+      startRenameNote, confirmRenameNote,
+      persist, showToast, refreshIcons
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
