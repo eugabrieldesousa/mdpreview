@@ -1,0 +1,33 @@
+/* Responsabilidade: Layout principal, grid, containers, responsividade */
+
+#app { height: 100vh; display: flex; overflow: hidden; }
+
+/* === DRAWER OVERLAY === */
+.drawer-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  z-index: 25; display: none;
+  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+}
+
+/* === MOBILE TOGGLE === */
+.mobile-toggle {
+  display: none; position: fixed; top: var(--space-3); left: var(--space-3); z-index: 35;
+  width: 40px; height: 40px; border-radius: var(--radius-md);
+  background: var(--modal-bg); color: var(--text-primary);
+  align-items: center; justify-content: center;
+  box-shadow: var(--shadow-sm); border: 1px solid var(--border-subtle);
+}
+
+/* === RESPONSIVE (iOS Adaptive) === */
+@media (max-width: 768px) {
+  .sidebar { position: fixed; left: -240px; top: 0; bottom: 0; transition: left 250ms cubic-bezier(0.32,0.72,0,1); z-index: 30; }
+  .sidebar.open { left: 0; }
+  .drawer-overlay { display: block; opacity: 0; pointer-events: none; transition: opacity 200ms ease; }
+  .drawer-overlay.visible { opacity: 1; pointer-events: auto; }
+  .notes-list { min-width: 100%; }
+  .notes-list.hidden-mobile { display: none; }
+  .mobile-toggle { display: flex; }
+  .editor-header { padding-left: 56px; }
+  .markdown-body { padding: var(--space-4); }
+  .editor-textarea { padding: var(--space-4); }
+}

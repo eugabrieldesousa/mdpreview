@@ -1,0 +1,201 @@
+/* Responsabilidade: Reset, variáveis CSS (dark/light), tipografia, animações, hljs overrides, seleção */
+
+:root {
+  /* === BACKGROUNDS (Dark Mode - iOS OLED) === */
+  --bg: #000000;
+  --sidebar-bg: #1C1C1E;
+  --list-bg: #1C1C1E;
+  --list-active: rgba(10,132,255,0.18);
+  --editor-bg: #000000;
+  --code-bg: #1C1C1E;
+  --hover: rgba(255,255,255,0.08);
+  --input-bg: #2C2C2E;
+  --modal-bg: #2C2C2E;
+  --toast-bg: #2C2C2E;
+
+  /* === TEXTOS (Dark) === */
+  --text-primary: #FFFFFF;
+  --text-body: #EBEBF5;
+  --text-secondary: #98989D;
+  --text-tertiary: #636366;
+  --text-quaternary: #48484A;
+  --text-code: #FFFFFF;
+
+  /* === ACCENT iOS (Dark) === */
+  --accent: #0A84FF;
+  --accent-dim: rgba(10,132,255,0.60);
+  --accent-faint: rgba(10,132,255,0.35);
+  --accent-green: #32D74B;
+  --accent-orange: #FF9F0A;
+  --accent-red: #FF453A;
+  --accent-yellow: #FFD60A;
+  --accent-purple: #BF5AF2;
+  --accent-pink: #FF375F;
+
+  /* === SYNTAX HIGHLIGHTING (Xcode Dark) === */
+  --code-keyword: #FF7AB2;
+  --code-string: #FF8170;
+  --code-comment: #7F8C98;
+  --code-function: #4EB0CC;
+  --code-variable: #6BDFFF;
+  --code-number: #D9C97C;
+  --code-plain: #FFFFFF;
+  --code-type: #ACF2E4;
+  --code-attr: #FFD0A0;
+
+  /* === BORDAS E SOMBRAS (Dark) === */
+  --divider: rgba(255,255,255,0.10);
+  --border-subtle: rgba(255,255,255,0.10);
+  --border-toast: rgba(255,255,255,0.08);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.50);
+  --shadow-modal: 0 24px 60px rgba(0,0,0,0.60);
+  --scrollbar-thumb: rgba(255,255,255,0.15);
+
+  /* === TIPOGRAFIA iOS === */
+  --font-system: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'SF Mono', 'Monaco', 'Menlo', 'Fira Code', 'Consolas', 'Courier New', monospace;
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-lg: 17px;
+  --text-xl: 20px;
+  --text-2xl: 28px;
+  --text-3xl: 34px;
+
+  /* === ESPAÇAMENTOS (Múltiplos de 4 - iOS Grid) === */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* === RAIOS iOS === */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 9999px;
+
+  /* === Legacy (usadas pelo JS) === */
+  --font-size: 15px;
+  --font-family: var(--font-system);
+}
+
+/* === LIGHT MODE (iOS) === */
+.light {
+  --bg: #FFFFFF;
+  --sidebar-bg: #F2F2F7;
+  --list-bg: #FFFFFF;
+  --list-active: rgba(0,122,255,0.12);
+  --editor-bg: #FFFFFF;
+  --code-bg: #F5F5F7;
+  --hover: rgba(0,0,0,0.04);
+  --input-bg: #F2F2F7;
+  --modal-bg: #FFFFFF;
+  --toast-bg: #FFFFFF;
+
+  --text-primary: #000000;
+  --text-body: #3C3C43;
+  --text-secondary: #8E8E93;
+  --text-tertiary: #AEAEB2;
+  --text-quaternary: #C7C7CC;
+  --text-code: #1D1D1F;
+
+  --accent: #007AFF;
+  --accent-dim: rgba(0,122,255,0.60);
+  --accent-faint: rgba(0,122,255,0.35);
+  --accent-green: #34C759;
+  --accent-orange: #FF9500;
+  --accent-red: #FF3B30;
+  --accent-yellow: #FFD60A;
+  --accent-purple: #AF52DE;
+  --accent-pink: #FF2D55;
+
+  --code-keyword: #AD3DA4;
+  --code-string: #D12F1B;
+  --code-comment: #6C7986;
+  --code-function: #3E8087;
+  --code-variable: #0F68A0;
+  --code-number: #1C00CF;
+  --code-plain: #1D1D1F;
+  --code-type: #23575C;
+  --code-attr: #804000;
+
+  --divider: rgba(0,0,0,0.08);
+  --border-subtle: rgba(0,0,0,0.08);
+  --border-toast: rgba(0,0,0,0.06);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-modal: 0 24px 60px rgba(0,0,0,0.15);
+  --scrollbar-thumb: rgba(0,0,0,0.15);
+}
+
+/* === RESET & BASE === */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: var(--font-system);
+  background: var(--bg);
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: var(--radius-full); }
+button { cursor: pointer; border: none; background: none; color: inherit; font-family: inherit; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-sm); }
+input, textarea { font-family: inherit; }
+textarea:focus, input:focus { outline: none; }
+
+/* === ANIMATIONS (iOS Spring) === */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes popoverIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+@keyframes toastIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+/* === HIGHLIGHT.JS OVERRIDES (Xcode Theme) === */
+.hljs { background: transparent !important; color: var(--code-plain) !important; }
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-built_in,
+.hljs-deletion { color: var(--code-keyword) !important; font-weight: 500; }
+.hljs-string,
+.hljs-attr,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition,
+.hljs-template-tag,
+.hljs-template-variable { color: var(--code-string) !important; }
+.hljs-comment,
+.hljs-quote,
+.hljs-meta { color: var(--code-comment) !important; font-style: italic; }
+.hljs-title,
+.hljs-section,
+.hljs-title.function_ { color: var(--code-function) !important; font-weight: 500; }
+.hljs-variable,
+.hljs-name,
+.hljs-tag { color: var(--code-variable) !important; }
+.hljs-number,
+.hljs-literal { color: var(--code-number) !important; }
+.hljs-type,
+.hljs-title.class_,
+.hljs-params { color: var(--code-type) !important; }
+.hljs-attribute { color: var(--code-attr) !important; }
+.hljs-regexp,
+.hljs-link { color: var(--code-string) !important; }
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: 700; }
+
+/* === SELECTION === */
+::selection { background: var(--accent-faint); color: var(--text-primary); }
+::-moz-selection { background: var(--accent-faint); color: var(--text-primary); }
