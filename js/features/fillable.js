@@ -58,9 +58,44 @@ export function applyFillButtons() {
     const raw = wrapper.getAttribute('data-raw');
     const decoded = decodeRaw(raw);
     const hash = blockHash(decoded);
-    const hasFields = fileFields.some(f => f.blockHash === hash);
+    const blockFields = fileFields.filter(f => f.blockHash === hash);
+    const hasFields = blockFields.length > 0;
     wrapper.classList.toggle('has-fill-fields', hasFields);
+    const codeEl = wrapper.querySelector('pre code');
+    if (codeEl) highlightFillVariables(codeEl, blockFields);
   });
+}
+
+function highlightFillVariables(codeEl, fields) {
+  codeEl.querySelectorAll('.fill-variable').forEach(el => {
+    el.replaceWith(document.createTextNode(el.textContent));
+  });
+  codeEl.normalize();
+  if (!fields.length) return;
+  const escaped = fields.map(f => f.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const pattern = new RegExp('(' + escaped.join('|') + ')', 'g');
+  const walker = document.createTreeWalker(codeEl, NodeFilter.SHOW_TEXT);
+  const textNodes = [];
+  while (walker.nextNode()) textNodes.push(walker.currentNode);
+  for (const node of textNodes) {
+    if (!fields.some(f => node.textContent.includes(f.text))) continue;
+    pattern.lastIndex = 0;
+    const frag = document.createDocumentFragment();
+    let lastIdx = 0;
+    let match;
+    while ((match = pattern.exec(node.textContent)) !== null) {
+      if (match.index > lastIdx) frag.appendChild(document.createTextNode(node.textContent.slice(lastIdx, match.index)));
+      const span = document.createElement('span');
+      span.className = 'fill-variable';
+      span.textContent = match[0];
+      const field = fields.find(f => f.text === match[0]);
+      span.title = field && field.value ? 'Valor: ' + field.value : 'Campo preenchível';
+      frag.appendChild(span);
+      lastIdx = match.index + match[0].length;
+    }
+    if (lastIdx < node.textContent.length) frag.appendChild(document.createTextNode(node.textContent.slice(lastIdx)));
+    node.parentNode.replaceChild(frag, node);
+  }
 }
 
 export function openFillModal(btn) {

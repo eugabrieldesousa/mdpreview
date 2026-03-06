@@ -6,6 +6,7 @@ const KEYS = {
   SETTINGS: 'mdv_settings',
   FILLABLE: 'mdv_fillable',
   BOOKMARKS: 'mdv_bookmarks',
+  COLLAPSED: 'mdv_collapsed',
 };
 
 function load(key, fallback) {
@@ -63,4 +64,12 @@ export function loadBookmarks() {
 
 export function saveBookmarks(data) {
   save(KEYS.BOOKMARKS, data);
+}
+
+export function loadCollapsed() {
+  return load(KEYS.COLLAPSED, {});
+}
+
+export function saveCollapsed(data) {
+  save(KEYS.COLLAPSED, data);
 }

@@ -2,7 +2,7 @@
 
 const { ref, computed } = Vue;
 
-import { loadFiles, loadFolders, loadSettings, loadFillable, loadBookmarks, saveFiles, saveFolders } from './storage.js';
+import { loadFiles, loadFolders, loadSettings, loadFillable, loadBookmarks, loadCollapsed, saveFiles, saveFolders } from './storage.js';
 import { uuid } from './utils.js';
 
 // --- Dados persistidos ---
@@ -49,6 +49,9 @@ export const fillModal = ref({ visible: false, fields: [], blockHash: '', blockR
 // --- Bookmarks ---
 export const bookmarksData = ref(loadBookmarks());
 export const showBookmarks = ref(false);
+
+// --- Collapsible Sections ---
+export const collapsedSections = ref(loadCollapsed());
 
 // --- Responsividade ---
 export const isMobile = ref(window.innerWidth <= 768);

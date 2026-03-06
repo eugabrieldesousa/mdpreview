@@ -39,27 +39,34 @@
         <span class="folder-name">Todas as notas</span>
         <span class="folder-count">{{ files.length }}</span>
       </div>
-      <div v-for="f in folders" :key="f.id" class="folder-item" :class="{ active: activeFolderId === f.id }"
-           @click="selectFolder(f.id)" @dblclick.prevent="startRenameFolder(f)">
-        <i data-lucide="folder" class="folder-icon" style="width:18px;height:18px;"></i>
-        <template v-if="renamingFolderId === f.id">
-          <input class="rename-input" v-model="renamingFolderName"
-                 @keydown.enter="confirmRenameFolder" @keydown.escape="cancelRenameFolder"
-                 @blur="confirmRenameFolder" ref="folderRenameInput">
-        </template>
-        <template v-else>
-          <span class="folder-name">{{ f.name }}</span>
-          <span class="folder-count">{{ filesByFolder(f.id).length }}</span>
-        </template>
-        <div class="folder-actions" v-if="renamingFolderId !== f.id">
-          <button @click.stop="startRenameFolder(f)" aria-label="Renomear pasta">
-            <i data-lucide="pencil" style="width:14px;height:14px;"></i>
-          </button>
-          <button @click.stop="deleteFolder(f.id)" aria-label="Excluir pasta">
-            <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
-          </button>
-        </div>
+      <div class="section-header" @click="toggleSection('folders')">
+        <i data-lucide="chevron-right" class="section-chevron" :class="{ expanded: !collapsedSections.folders }" style="width:14px;height:14px;"></i>
+        <span class="section-title">Pastas</span>
+        <span class="folder-count">{{ folders.length }}</span>
       </div>
+      <template v-if="!collapsedSections.folders">
+        <div v-for="f in folders" :key="f.id" class="folder-item" :class="{ active: activeFolderId === f.id }"
+             @click="selectFolder(f.id)" @dblclick.prevent="startRenameFolder(f)">
+          <i data-lucide="folder" class="folder-icon" style="width:18px;height:18px;"></i>
+          <template v-if="renamingFolderId === f.id">
+            <input class="rename-input" v-model="renamingFolderName"
+                   @keydown.enter="confirmRenameFolder" @keydown.escape="cancelRenameFolder"
+                   @blur="confirmRenameFolder" ref="folderRenameInput">
+          </template>
+          <template v-else>
+            <span class="folder-name">{{ f.name }}</span>
+            <span class="folder-count">{{ filesByFolder(f.id).length }}</span>
+          </template>
+          <div class="folder-actions" v-if="renamingFolderId !== f.id">
+            <button @click.stop="startRenameFolder(f)" aria-label="Renomear pasta">
+              <i data-lucide="pencil" style="width:14px;height:14px;"></i>
+            </button>
+            <button @click.stop="deleteFolder(f.id)" aria-label="Excluir pasta">
+              <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+            </button>
+          </div>
+        </div>
+      </template>
     </div>
   </aside>
 
@@ -136,7 +143,7 @@
       <textarea v-if="editMode" class="editor-textarea" v-model="activeFile.content"
                 @input="onContentChange" spellcheck="false"></textarea>
       <div v-else class="markdown-body" ref="markdownBody" v-html="renderedMarkdown"
-           @mouseup="onTextSelect" @mousedown="hidePopover"></div>
+           @mouseup="onTextSelect" @mousedown="hidePopover" @dblclick="onInlineEdit"></div>
     </div>
   </main>
 

@@ -2,8 +2,8 @@
 
 const { nextTick } = Vue;
 
-import { files, folders, activeFolderId, activeFileId, activeFile, editMode, persist, renameNote, bookmarksData } from '../state.js';
-import { saveBookmarks } from '../storage.js';
+import { files, folders, activeFolderId, activeFileId, activeFile, editMode, persist, renameNote, bookmarksData, fillableFields } from '../state.js';
+import { saveBookmarks, saveFillable } from '../storage.js';
 import { uuid, refreshIcons } from '../utils.js';
 
 export function createFile() {
@@ -31,6 +31,8 @@ export function deleteFile(id) {
   if (activeFileId.value === id) activeFileId.value = null;
   bookmarksData.value = bookmarksData.value.filter(b => b.fileId !== id);
   saveBookmarks(bookmarksData.value);
+  fillableFields.value = fillableFields.value.filter(f => f.fileId !== id);
+  saveFillable(fillableFields.value);
   persist();
   nextTick(refreshIcons);
 }

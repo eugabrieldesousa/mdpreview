@@ -2,8 +2,9 @@
 
 const { nextTick } = Vue;
 
-import { folders, files, activeFolderId, sidebarOpen, renamingFolderId, renamingFolderName, persist } from '../state.js';
+import { folders, files, activeFolderId, sidebarOpen, renamingFolderId, renamingFolderName, persist, collapsedSections } from '../state.js';
 import { uuid, refreshIcons } from '../utils.js';
+import { saveCollapsed } from '../storage.js';
 
 export function createFolder() {
   folders.value.push({ id: uuid(), name: 'Nova pasta' });
@@ -47,4 +48,9 @@ export function deleteFolder(id) {
 
 export function filesByFolder(folderId) {
   return files.value.filter(f => f.folder === folderId);
+}
+
+export function toggleSection(key) {
+  collapsedSections.value = { ...collapsedSections.value, [key]: !collapsedSections.value[key] };
+  saveCollapsed(collapsedSections.value);
 }

@@ -12,6 +12,7 @@ import {
   toast, popover, selectedText, importConflict, renameNote,
   fillableFields, fillModal,
   bookmarksData, showBookmarks,
+  collapsedSections,
   persist, getFolderName, onResize
 } from './state.js';
 
@@ -23,7 +24,7 @@ import { showToast } from './components/toast.js';
 import { onTextSelect, hidePopover, copySelection, quoteSelection, onDocClick } from './components/popover.js';
 
 // Features
-import { createFolder, selectFolder, startRenameFolder, confirmRenameFolder, cancelRenameFolder, deleteFolder, filesByFolder } from './features/folders.js';
+import { createFolder, selectFolder, startRenameFolder, confirmRenameFolder, cancelRenameFolder, deleteFolder, filesByFolder, toggleSection } from './features/folders.js';
 import { createFile, openFile, deleteFile, onContentChange, startRenameNote, confirmRenameNote } from './features/notes.js';
 import { renderedMarkdown, copyCode } from './features/markdown.js';
 import { toggleTheme, changeFontSize, saveFontFamily, toggleMode, applyTheme, applyFont } from './features/settings.js';
@@ -31,6 +32,7 @@ import { addFillableFromSelection, applyFillButtons, openFillModal, removeFillFi
 import { currentFileBookmarks, addBookmarkFromSelection, removeBookmark, navigateToBookmark } from './features/bookmarks.js';
 import { exportProject, exportSingle, importProject, resolveImport } from './features/importExport.js';
 import { onKeydown } from './features/shortcuts.js';
+import { onInlineEdit } from './features/inlineEdit.js';
 
 // Global callbacks for rendered HTML (code blocks)
 window.__copyCode = copyCode;
@@ -67,7 +69,8 @@ createApp({
       () => fillModal.value.visible,
       () => importConflict.value.visible,
       () => toast.value.visible,
-      () => showBookmarks.value
+      () => showBookmarks.value,
+      collapsedSections
     ], () => {
       nextTick(refreshIcons);
     });
@@ -83,10 +86,11 @@ createApp({
       toast, popover, selectedText, importConflict, renameNote,
       fillableFields, fillModal,
       bookmarksData, showBookmarks, currentFileBookmarks,
+      collapsedSections,
       // Methods
       toggleTheme, changeFontSize, saveFontFamily, toggleMode,
       createFolder, selectFolder, startRenameFolder, confirmRenameFolder, cancelRenameFolder,
-      deleteFolder, filesByFolder,
+      deleteFolder, filesByFolder, toggleSection,
       createFile, openFile, deleteFile, onContentChange,
       getTitle, getPreview, formatDate, getFolderName,
       onTextSelect, hidePopover, copySelection, quoteSelection,
@@ -94,6 +98,7 @@ createApp({
       addBookmarkFromSelection, removeBookmark, navigateToBookmark,
       exportProject, exportSingle, importProject, resolveImport,
       startRenameNote, confirmRenameNote,
+      onInlineEdit,
       persist, showToast, refreshIcons
     };
   }
