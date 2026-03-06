@@ -14,10 +14,16 @@ export function formatDate(d) {
 }
 
 export function getTitle(f) {
-  return f.name || 'Sem titulo';
+  if (!f) return 'Sem titulo';
+  if (f.content) {
+    const m = f.content.match(/^#\s+(.+)/m);
+    if (m) return m[1].trim();
+  }
+  return f.name ? f.name.replace(/\.md$/, '') : 'Sem titulo';
 }
 
 export function getPreview(f) {
+  if (!f || !f.content) return '';
   const lines = (f.content || '').split('\n').filter(l => l.trim() && !l.startsWith('#'));
   return (lines[0] || '').substring(0, 60) || 'Sem conteudo';
 }

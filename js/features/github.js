@@ -1,28 +1,15 @@
-// Responsabilidade: Integração GitHub — conectar repo, listar/ler/criar/editar/excluir arquivos .md via API
+// Responsabilidade: Camada de dados GitHub — API para CRUD de arquivos via repositório
 
-const { ref, computed, nextTick } = Vue;
+const { nextTick } = Vue;
 
+import {
+  ghToken, ghOwner, ghRepo, ghConnected, ghScreen,
+  ghRepos, ghLoading, ghSaving, ghError,
+  files, folders, activeFileId, hasUnsavedChanges
+} from '../state.js';
+import { saveGhToken, saveGhOwner, saveGhRepo, clearGhCredentials } from '../storage.js';
 import { showToast } from '../components/toast.js';
-import { refreshIcons, uuid } from '../utils.js';
-
-// --- Estado GitHub ---
-export const ghToken = ref(localStorage.getItem('mdv_gh_token') || '');
-export const ghOwner = ref(localStorage.getItem('mdv_gh_owner') || '');
-export const ghRepo = ref(localStorage.getItem('mdv_gh_repo') || '');
-export const ghConnected = ref(false);
-export const ghShowModal = ref(false);
-export const ghShowBrowser = ref(false);
-export const ghLoading = ref(false);
-export const ghRepos = ref([]);
-export const ghFiles = ref([]);
-export const ghCurrentPath = ref('');
-export const ghActiveFile = ref(null); // { path, content, sha, name }
-export const ghEditMode = ref(false);
-export const ghEditContent = ref('');
-export const ghError = ref('');
-export const ghNewFileName = ref('');
-export const ghShowNewFile = ref(false);
-export const ghCommitMsg = ref('');
+import { refreshIcons } from '../utils.js';
 
 const API = 'https://api.github.com';
 
@@ -32,6 +19,16 @@ function headers() {
     'Accept': 'application/vnd.github+json',
     'X-GitHub-Api-Version': '2022-11-28'
   };
+}
+
+function encodeBase64(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
+function decodeBase64(b64) {
+  const raw = atob(b64.replace(/\n/g, ''));
+  try { return decodeURIComponent(escape(raw)); }
+  catch { return raw; }
 }
 
 // --- Conexão ---
@@ -47,11 +44,11 @@ export async function ghConnect() {
     if (!res.ok) throw new Error('Token inválido');
     const user = await res.json();
     ghOwner.value = user.login;
-    localStorage.setItem('mdv_gh_token', ghToken.value);
-    localStorage.setItem('mdv_gh_owner', ghOwner.value);
+    saveGhToken(ghToken.value);
+    saveGhOwner(ghOwner.value);
     ghConnected.value = true;
+    ghScreen.value = 'repos';
     await ghLoadRepos();
-    showToast('Conectado ao GitHub como ' + user.login);
   } catch (e) {
     ghError.value = e.message || 'Erro ao conectar';
   } finally {
@@ -65,19 +62,19 @@ export function ghDisconnect() {
   ghRepo.value = '';
   ghConnected.value = false;
   ghRepos.value = [];
-  ghFiles.value = [];
-  ghActiveFile.value = null;
-  ghCurrentPath.value = '';
-  ghShowBrowser.value = false;
-  localStorage.removeItem('mdv_gh_token');
-  localStorage.removeItem('mdv_gh_owner');
-  localStorage.removeItem('mdv_gh_repo');
-  showToast('Desconectado do GitHub');
+  files.value = [];
+  folders.value = [];
+  activeFileId.value = null;
+  hasUnsavedChanges.value = false;
+  ghScreen.value = 'login';
+  clearGhCredentials();
+  showToast('Desconectado');
 }
 
 // --- Repositórios ---
 export async function ghLoadRepos() {
   ghLoading.value = true;
+  ghError.value = '';
   try {
     const res = await fetch(API + '/user/repos?per_page=100&sort=updated&affiliation=owner', { headers: headers() });
     if (!res.ok) throw new Error('Erro ao carregar repositórios');
@@ -86,119 +83,72 @@ export async function ghLoadRepos() {
     ghError.value = e.message;
   } finally {
     ghLoading.value = false;
+    nextTick(refreshIcons);
   }
 }
 
 export async function ghSelectRepo(repo) {
   ghRepo.value = repo.name;
   ghOwner.value = repo.owner.login;
-  localStorage.setItem('mdv_gh_repo', repo.name);
-  localStorage.setItem('mdv_gh_owner', repo.owner.login);
-  ghCurrentPath.value = '';
-  ghActiveFile.value = null;
-  ghShowModal.value = false;
-  ghShowBrowser.value = true;
-  await ghLoadFiles('');
+  saveGhRepo(repo.name);
+  saveGhOwner(repo.owner.login);
+  ghError.value = '';
+  await loadRepoTree();
+  ghScreen.value = 'app';
   nextTick(refreshIcons);
 }
 
-// --- Navegar arquivos ---
-export async function ghLoadFiles(path) {
+export async function ghChangeRepo() {
+  files.value = [];
+  folders.value = [];
+  activeFileId.value = null;
+  hasUnsavedChanges.value = false;
+  ghScreen.value = 'repos';
+  await ghLoadRepos();
+}
+
+// --- Carregar árvore do repositório ---
+async function getDefaultBranch() {
+  const res = await fetch(
+    API + '/repos/' + encodeURIComponent(ghOwner.value) + '/' + encodeURIComponent(ghRepo.value),
+    { headers: headers() }
+  );
+  if (!res.ok) throw new Error('Erro ao acessar repositório');
+  const repo = await res.json();
+  return repo.default_branch || 'main';
+}
+
+export async function loadRepoTree() {
   ghLoading.value = true;
   ghError.value = '';
   try {
-    const url = API + '/repos/' + encodeURIComponent(ghOwner.value) + '/' + encodeURIComponent(ghRepo.value) + '/contents/' + path;
-    const res = await fetch(url, { headers: headers() });
+    const branch = await getDefaultBranch();
+    const res = await fetch(
+      API + '/repos/' + encodeURIComponent(ghOwner.value) + '/' + encodeURIComponent(ghRepo.value) +
+      '/git/trees/' + branch + '?recursive=1',
+      { headers: headers() }
+    );
     if (!res.ok) throw new Error('Erro ao carregar arquivos');
     const data = await res.json();
-    const items = Array.isArray(data) ? data : [data];
-    ghFiles.value = items
-      .filter(f => f.type === 'dir' || f.name.endsWith('.md'))
-      .sort((a, b) => {
-        if (a.type === 'dir' && b.type !== 'dir') return -1;
-        if (a.type !== 'dir' && b.type === 'dir') return 1;
-        return a.name.localeCompare(b.name);
-      });
-    ghCurrentPath.value = path;
-  } catch (e) {
-    ghError.value = e.message;
-  } finally {
-    ghLoading.value = false;
-    nextTick(refreshIcons);
-  }
-}
 
-export function ghNavigateUp() {
-  const parts = ghCurrentPath.value.split('/').filter(Boolean);
-  parts.pop();
-  const newPath = parts.join('/');
-  ghActiveFile.value = null;
-  ghLoadFiles(newPath);
-}
+    const mdFiles = [];
+    const dirSet = new Set();
 
-export function ghOpenItem(item) {
-  if (item.type === 'dir') {
-    ghActiveFile.value = null;
-    ghLoadFiles(item.path);
-  } else {
-    ghOpenFile(item.path);
-  }
-}
-
-// --- Ler arquivo ---
-export async function ghOpenFile(path) {
-  ghLoading.value = true;
-  ghError.value = '';
-  try {
-    const url = API + '/repos/' + encodeURIComponent(ghOwner.value) + '/' + encodeURIComponent(ghRepo.value) + '/contents/' + path;
-    const res = await fetch(url, { headers: headers() });
-    if (!res.ok) throw new Error('Erro ao abrir arquivo');
-    const data = await res.json();
-    const content = decodeBase64(data.content);
-    ghActiveFile.value = {
-      path: data.path,
-      name: data.name,
-      sha: data.sha,
-      content: content
-    };
-    ghEditMode.value = false;
-    ghEditContent.value = content;
-  } catch (e) {
-    ghError.value = e.message;
-  } finally {
-    ghLoading.value = false;
-    nextTick(refreshIcons);
-  }
-}
-
-// --- Criar arquivo ---
-export async function ghCreateFile() {
-  let name = ghNewFileName.value.trim();
-  if (!name) return;
-  if (!name.endsWith('.md')) name += '.md';
-  const path = ghCurrentPath.value ? ghCurrentPath.value + '/' + name : name;
-  ghLoading.value = true;
-  ghError.value = '';
-  try {
-    const url = API + '/repos/' + encodeURIComponent(ghOwner.value) + '/' + encodeURIComponent(ghRepo.value) + '/contents/' + path;
-    const body = {
-      message: 'Criar ' + name + ' via MD Viewer',
-      content: encodeBase64('# ' + name.replace('.md', '') + '\n')
-    };
-    const res = await fetch(url, {
-      method: 'PUT',
-      headers: headers(),
-      body: JSON.stringify(body)
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || 'Erro ao criar arquivo');
+    for (const item of data.tree) {
+      if (item.type === 'blob' && item.path.endsWith('.md')) {
+        const parts = item.path.split('/');
+        const name = parts[parts.length - 1];
+        const folder = parts.length > 1 ? parts.slice(0, -1).join('/') : '';
+        mdFiles.push({ path: item.path, name, sha: item.sha, folder, content: undefined });
+        if (folder) dirSet.add(folder);
+      }
+      if (item.type === 'tree') {
+        dirSet.add(item.path);
+      }
     }
-    ghShowNewFile.value = false;
-    ghNewFileName.value = '';
-    showToast('Arquivo criado');
-    await ghLoadFiles(ghCurrentPath.value);
-    await ghOpenFile(path);
+
+    files.value = mdFiles;
+    folders.value = Array.from(dirSet).sort().map(d => ({ id: d, name: d }));
   } catch (e) {
     ghError.value = e.message;
   } finally {
@@ -206,127 +156,148 @@ export async function ghCreateFile() {
   }
 }
 
-// --- Salvar arquivo (update) ---
-export async function ghSaveFile() {
-  if (!ghActiveFile.value) return;
+// --- Ler conteúdo de arquivo ---
+export async function fetchFileContent(file) {
   ghLoading.value = true;
   ghError.value = '';
-  const msg = ghCommitMsg.value.trim() || 'Atualizar ' + ghActiveFile.value.name + ' via MD Viewer';
   try {
-    const url = API + '/repos/' + encodeURIComponent(ghOwner.value) + '/' + encodeURIComponent(ghRepo.value) + '/contents/' + ghActiveFile.value.path;
+    const url = API + '/repos/' + encodeURIComponent(ghOwner.value) + '/' + encodeURIComponent(ghRepo.value) + '/contents/' + file.path;
+    const res = await fetch(url, { headers: headers() });
+    if (!res.ok) throw new Error('Erro ao ler arquivo');
+    const data = await res.json();
+    file.content = decodeBase64(data.content);
+    file.sha = data.sha;
+  } catch (e) {
+    ghError.value = e.message;
+  } finally {
+    ghLoading.value = false;
+  }
+}
+
+// --- Salvar arquivo (commit) ---
+export async function saveFile(file) {
+  ghSaving.value = true;
+  ghError.value = '';
+  try {
+    const url = API + '/repos/' + encodeURIComponent(ghOwner.value) + '/' + encodeURIComponent(ghRepo.value) + '/contents/' + file.path;
     const body = {
-      message: msg,
-      content: encodeBase64(ghEditContent.value),
-      sha: ghActiveFile.value.sha
+      message: 'Atualizar ' + file.name + ' via MD Viewer',
+      content: encodeBase64(file.content),
+      sha: file.sha
     };
-    const res = await fetch(url, {
-      method: 'PUT',
-      headers: headers(),
-      body: JSON.stringify(body)
-    });
+    const res = await fetch(url, { method: 'PUT', headers: headers(), body: JSON.stringify(body) });
     if (!res.ok) {
       const err = await res.json();
       throw new Error(err.message || 'Erro ao salvar');
     }
     const data = await res.json();
-    ghActiveFile.value.sha = data.content.sha;
-    ghActiveFile.value.content = ghEditContent.value;
-    ghEditMode.value = false;
-    ghCommitMsg.value = '';
+    file.sha = data.content.sha;
+    hasUnsavedChanges.value = false;
     showToast('Salvo no GitHub');
   } catch (e) {
     ghError.value = e.message;
+    showToast('Erro ao salvar');
+  } finally {
+    ghSaving.value = false;
+  }
+}
+
+// --- Criar arquivo ---
+export async function createFileOnGitHub(path, content) {
+  ghLoading.value = true;
+  ghError.value = '';
+  try {
+    const url = API + '/repos/' + encodeURIComponent(ghOwner.value) + '/' + encodeURIComponent(ghRepo.value) + '/contents/' + path;
+    const body = {
+      message: 'Criar ' + path.split('/').pop() + ' via MD Viewer',
+      content: encodeBase64(content)
+    };
+    const res = await fetch(url, { method: 'PUT', headers: headers(), body: JSON.stringify(body) });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || 'Erro ao criar arquivo');
+    }
+    const data = await res.json();
+    return { path: data.content.path, name: data.content.name, sha: data.content.sha };
+  } catch (e) {
+    ghError.value = e.message;
+    throw e;
   } finally {
     ghLoading.value = false;
   }
 }
 
 // --- Excluir arquivo ---
-export async function ghDeleteFile() {
-  if (!ghActiveFile.value) return;
-  if (!confirm('Excluir "' + ghActiveFile.value.name + '" do repositório?')) return;
+export async function deleteFileOnGitHub(path, sha) {
   ghLoading.value = true;
   ghError.value = '';
   try {
-    const url = API + '/repos/' + encodeURIComponent(ghOwner.value) + '/' + encodeURIComponent(ghRepo.value) + '/contents/' + ghActiveFile.value.path;
+    const url = API + '/repos/' + encodeURIComponent(ghOwner.value) + '/' + encodeURIComponent(ghRepo.value) + '/contents/' + path;
     const body = {
-      message: 'Excluir ' + ghActiveFile.value.name + ' via MD Viewer',
-      sha: ghActiveFile.value.sha
+      message: 'Excluir ' + path.split('/').pop() + ' via MD Viewer',
+      sha: sha
     };
-    const res = await fetch(url, {
-      method: 'DELETE',
-      headers: headers(),
-      body: JSON.stringify(body)
-    });
+    const res = await fetch(url, { method: 'DELETE', headers: headers(), body: JSON.stringify(body) });
     if (!res.ok) throw new Error('Erro ao excluir');
-    ghActiveFile.value = null;
-    showToast('Arquivo excluído');
-    await ghLoadFiles(ghCurrentPath.value);
   } catch (e) {
     ghError.value = e.message;
+    throw e;
   } finally {
     ghLoading.value = false;
   }
 }
 
-// --- Renderizar markdown do GitHub ---
-export const ghRenderedMarkdown = computed(() => {
-  if (!ghActiveFile.value) return '';
-  const raw = ghActiveFile.value.content || '';
-  marked.setOptions({
-    highlight: (code, lang) => {
-      if (lang && hljs.getLanguage(lang)) {
-        try { return hljs.highlight(code, { language: lang }).value; } catch {}
-      }
-      return hljs.highlightAuto(code).value;
-    },
-    breaks: true, gfm: true
-  });
-  return marked.parse(raw);
-});
-
-// --- Importar para local ---
-export function ghImportToLocal(files, folders, persist) {
-  if (!ghActiveFile.value) return;
-  const defaultFolder = folders.value[0];
-  const newFile = {
-    id: uuid(),
-    name: ghActiveFile.value.name.replace('.md', ''),
-    content: ghActiveFile.value.content,
-    folder: defaultFolder ? defaultFolder.id : null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
-  files.value.push(newFile);
-  persist();
-  showToast('Importado para notas locais');
-}
-
-// --- Reconectar automaticamente ---
-export async function ghAutoConnect() {
-  const token = localStorage.getItem('mdv_gh_token');
-  const repo = localStorage.getItem('mdv_gh_repo');
-  const owner = localStorage.getItem('mdv_gh_owner');
-  if (token && owner) {
-    ghToken.value = token;
-    ghOwner.value = owner;
-    ghConnected.value = true;
-    if (repo) {
-      ghRepo.value = repo;
-    }
-  }
-}
-
-// --- Base64 helpers (suporte UTF-8) ---
-function encodeBase64(str) {
-  return btoa(unescape(encodeURIComponent(str)));
-}
-
-function decodeBase64(b64) {
-  const raw = atob(b64.replace(/\n/g, ''));
+// --- Renomear arquivo (create new + delete old) ---
+export async function renameFileOnGitHub(oldPath, oldSha, newPath, content) {
+  ghLoading.value = true;
+  ghError.value = '';
   try {
-    return decodeURIComponent(escape(raw));
-  } catch {
-    return raw;
+    const createUrl = API + '/repos/' + encodeURIComponent(ghOwner.value) + '/' + encodeURIComponent(ghRepo.value) + '/contents/' + newPath;
+    const createBody = {
+      message: 'Renomear ' + oldPath.split('/').pop() + ' para ' + newPath.split('/').pop() + ' via MD Viewer',
+      content: encodeBase64(content)
+    };
+    const createRes = await fetch(createUrl, { method: 'PUT', headers: headers(), body: JSON.stringify(createBody) });
+    if (!createRes.ok) throw new Error('Erro ao criar novo arquivo');
+    const createData = await createRes.json();
+
+    const deleteUrl = API + '/repos/' + encodeURIComponent(ghOwner.value) + '/' + encodeURIComponent(ghRepo.value) + '/contents/' + oldPath;
+    const deleteBody = {
+      message: 'Remover ' + oldPath.split('/').pop() + ' (renomeado) via MD Viewer',
+      sha: oldSha
+    };
+    await fetch(deleteUrl, { method: 'DELETE', headers: headers(), body: JSON.stringify(deleteBody) });
+
+    return { path: createData.content.path, name: createData.content.name, sha: createData.content.sha };
+  } catch (e) {
+    ghError.value = e.message;
+    throw e;
+  } finally {
+    ghLoading.value = false;
   }
+}
+
+// --- Auto-connect ---
+export async function ghAutoConnect() {
+  if (!ghToken.value) {
+    ghScreen.value = 'login';
+    return;
+  }
+
+  ghConnected.value = true;
+
+  if (ghRepo.value && ghOwner.value) {
+    try {
+      await loadRepoTree();
+      ghScreen.value = 'app';
+    } catch {
+      ghScreen.value = 'repos';
+      await ghLoadRepos();
+    }
+  } else {
+    ghScreen.value = 'repos';
+    await ghLoadRepos();
+  }
+
+  nextTick(refreshIcons);
 }

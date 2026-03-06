@@ -1,6 +1,6 @@
 // Responsabilidade: Integração TipTap — editor WYSIWYG com suporte a Markdown
 
-import { activeFile, activeFileId, editMode, persist } from '../state.js';
+import { activeFile, activeFileId, editMode, hasUnsavedChanges } from '../state.js';
 
 const { watch, nextTick } = Vue;
 
@@ -52,10 +52,7 @@ export async function initTipTap() {
       if (skipUpdate || !activeFile.value) return;
       const md = editor.storage.markdown.getMarkdown();
       activeFile.value.content = md;
-      activeFile.value.updatedAt = new Date().toISOString();
-      const m = md.match(/^#\s+(.+)/m);
-      if (m) activeFile.value.name = m[1].trim();
-      persist();
+      hasUnsavedChanges.value = true;
     },
   });
 }

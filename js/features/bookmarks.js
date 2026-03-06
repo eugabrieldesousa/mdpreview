@@ -21,7 +21,7 @@ export const currentFileBookmarks = computed(() => {
   if (!activeFile.value) return [];
   const content = activeFile.value.content || '';
   return bookmarksData.value
-    .filter(b => b.fileId === activeFile.value.id)
+    .filter(b => b.filePath === activeFile.value.path)
     .sort((a, b) => getDocPosition(content, a.anchor) - getDocPosition(content, b.anchor));
 });
 
@@ -29,7 +29,7 @@ export function addBookmarkFromSelection() {
   if (!selectedText.value || !activeFile.value) return;
   const label = selectedText.value.substring(0, 120);
   const exists = bookmarksData.value.some(
-    b => b.fileId === activeFile.value.id && b.label === label
+    b => b.filePath === activeFile.value.path && b.label === label
   );
   if (exists) {
     showToast('Atalho ja existe');
@@ -38,7 +38,7 @@ export function addBookmarkFromSelection() {
   }
   bookmarksData.value.push({
     id: uuid(),
-    fileId: activeFile.value.id,
+    filePath: activeFile.value.path,
     label: label,
     anchor: label,
     createdAt: new Date().toISOString()
@@ -87,7 +87,7 @@ export function applyBookmarkIndicators() {
   const mbEl = markdownBody.value;
   if (!mbEl || !activeFile.value) return;
   mbEl.querySelectorAll('.bookmark-indicator').forEach(el => el.remove());
-  const bookmarks = bookmarksData.value.filter(b => b.fileId === activeFile.value.id);
+  const bookmarks = bookmarksData.value.filter(b => b.filePath === activeFile.value.path);
   if (!bookmarks.length) return;
 
   const walker = document.createTreeWalker(mbEl, NodeFilter.SHOW_TEXT, null, false);

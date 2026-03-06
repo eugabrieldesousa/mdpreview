@@ -1,6 +1,6 @@
 // Responsabilidade: Edição inline de textos simples no modo preview
 
-import { activeFile, editMode, persist, popover } from '../state.js';
+import { activeFile, editMode, hasUnsavedChanges, popover } from '../state.js';
 import { showToast } from '../components/toast.js';
 
 let currentEditing = null;
@@ -72,10 +72,7 @@ function finishInlineEdit() {
     }
   }
   if (updated) {
-    activeFile.value.updatedAt = new Date().toISOString();
-    const m = activeFile.value.content.match(/^#\s+(.+)/m);
-    if (m) activeFile.value.name = m[1].trim();
-    persist();
+    hasUnsavedChanges.value = true;
     showToast('Texto atualizado');
   }
   cleanup();

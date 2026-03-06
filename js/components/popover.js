@@ -2,7 +2,7 @@
 
 const { nextTick } = Vue;
 
-import { popover, selectedText, activeFile, persist } from '../state.js';
+import { popover, selectedText, activeFile, hasUnsavedChanges } from '../state.js';
 import { refreshIcons } from '../utils.js';
 import { showToast } from './toast.js';
 
@@ -40,8 +40,7 @@ export function quoteSelection() {
   if (activeFile.value) {
     const quoted = selectedText.value.split('\n').map(l => '> ' + l).join('\n');
     activeFile.value.content += '\n\n' + quoted + '\n';
-    activeFile.value.updatedAt = new Date().toISOString();
-    persist();
+    hasUnsavedChanges.value = true;
     popover.value.visible = false;
     showToast('Citacao adicionada');
   }

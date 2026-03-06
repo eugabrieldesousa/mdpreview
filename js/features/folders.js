@@ -1,50 +1,33 @@
-// Responsabilidade: Gerenciamento de pastas (CRUD, rename, delete)
+// Responsabilidade: Gerenciamento de pastas (diretórios GitHub)
 
 const { nextTick } = Vue;
 
-import { folders, files, activeFolderId, sidebarOpen, notesListCollapsed, renamingFolderId, renamingFolderName, persist, collapsedSections } from '../state.js';
-import { uuid, refreshIcons } from '../utils.js';
+import { folders, files, activeFolderId, sidebarOpen, notesListCollapsed, collapsedSections } from '../state.js';
 import { saveCollapsed } from '../storage.js';
+import { createFileOnGitHub } from './github.js';
+import { refreshIcons } from '../utils.js';
+import { showToast } from '../components/toast.js';
 
-export function createFolder() {
-  folders.value.push({ id: uuid(), name: 'Nova pasta' });
-  persist();
-  nextTick(refreshIcons);
+export async function createFolder() {
+  const name = prompt('Nome da pasta:');
+  if (!name || !name.trim()) return;
+  const safeName = name.trim().replace(/[^a-zA-Z0-9\u00C0-\u00FA _-]/g, '').replace(/\s+/g, '-');
+  if (!safeName) return;
+  try {
+    await createFileOnGitHub(safeName + '/.gitkeep', '');
+    if (!folders.value.find(f => f.id === safeName)) {
+      folders.value.push({ id: safeName, name: safeName });
+    }
+    activeFolderId.value = safeName;
+    showToast('Pasta criada');
+    nextTick(refreshIcons);
+  } catch { /* error handled in github.js */ }
 }
 
 export function selectFolder(id) {
   activeFolderId.value = id;
   notesListCollapsed.value = false;
   sidebarOpen.value = false;
-}
-
-export function startRenameFolder(f) {
-  renamingFolderId.value = f.id;
-  renamingFolderName.value = f.name;
-  nextTick(() => {
-    const el = document.querySelector('.rename-input');
-    if (el) { el.focus(); el.select(); }
-  });
-}
-
-export function confirmRenameFolder() {
-  if (renamingFolderId.value && renamingFolderName.value.trim()) {
-    const f = folders.value.find(x => x.id === renamingFolderId.value);
-    if (f) f.name = renamingFolderName.value.trim();
-    persist();
-  }
-  renamingFolderId.value = null;
-}
-
-export function cancelRenameFolder() {
-  renamingFolderId.value = null;
-}
-
-export function deleteFolder(id) {
-  files.value.forEach(f => { if (f.folder === id) f.folder = null; });
-  folders.value = folders.value.filter(f => f.id !== id);
-  if (activeFolderId.value === id) activeFolderId.value = null;
-  persist();
 }
 
 export function filesByFolder(folderId) {

@@ -28,7 +28,7 @@ export function addFillableFromSelection() {
   const decoded = decodeRaw(raw);
   const hash = blockHash(decoded);
   const exists = fillableFields.value.some(
-    f => f.fileId === activeFile.value.id && f.blockHash === hash && f.text === selectedText.value
+    f => f.filePath === activeFile.value.path && f.blockHash === hash && f.text === selectedText.value
   );
   if (exists) {
     showToast('Campo ja existe');
@@ -38,7 +38,7 @@ export function addFillableFromSelection() {
   fillableFields.value.push({
     id: uuid(),
     text: selectedText.value,
-    fileId: activeFile.value.id,
+    filePath: activeFile.value.path,
     blockHash: hash,
     value: '',
     createdAt: new Date().toISOString()
@@ -53,7 +53,7 @@ export function addFillableFromSelection() {
 export function applyFillButtons() {
   const mbEl = markdownBody.value;
   if (!mbEl || !activeFile.value) return;
-  const fileFields = fillableFields.value.filter(f => f.fileId === activeFile.value.id);
+  const fileFields = fillableFields.value.filter(f => f.filePath === activeFile.value.path);
   mbEl.querySelectorAll('.code-block-wrapper').forEach(wrapper => {
     const raw = wrapper.getAttribute('data-raw');
     const decoded = decodeRaw(raw);
@@ -104,7 +104,7 @@ export function openFillModal(btn) {
   const decoded = decodeRaw(raw);
   const hash = blockHash(decoded);
   const fields = fillableFields.value
-    .filter(f => f.fileId === activeFile.value.id && f.blockHash === hash)
+    .filter(f => f.filePath === activeFile.value.path && f.blockHash === hash)
     .map(f => ({ id: f.id, text: f.text, value: f.value || '' }));
   if (!fields.length) return;
   fillModal.value = { visible: true, fields, blockHash: hash, blockRaw: decoded };

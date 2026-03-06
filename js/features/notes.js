@@ -1,61 +1,104 @@
-// Responsabilidade: Gerenciamento de notas (criar, abrir, excluir, editar, renomear)
+// Responsabilidade: Gerenciamento de notas — criar, abrir, excluir, salvar, renomear (via GitHub)
 
 const { nextTick } = Vue;
 
-import { files, folders, activeFolderId, activeFileId, activeFile, editMode, persist, renameNote, bookmarksData, fillableFields } from '../state.js';
+import { files, activeFolderId, activeFileId, activeFile, editMode, hasUnsavedChanges, renameNote, bookmarksData, fillableFields } from '../state.js';
 import { saveBookmarks, saveFillable } from '../storage.js';
-import { uuid, refreshIcons } from '../utils.js';
+import { fetchFileContent, saveFile, createFileOnGitHub, deleteFileOnGitHub, renameFileOnGitHub } from './github.js';
+import { refreshIcons } from '../utils.js';
+import { showToast } from '../components/toast.js';
 
-export function createFile() {
-  const id = uuid();
-  const folderId = activeFolderId.value || (folders.value.length ? folders.value[0].id : null);
-  files.value.push({
-    id, name: 'Nova nota', content: '# Nova nota\n\n',
-    folder: folderId, createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  });
-  activeFileId.value = id;
-  editMode.value = true;
-  persist();
-  nextTick(refreshIcons);
+export async function createFile() {
+  const folder = activeFolderId.value || '';
+  const timestamp = Date.now().toString(36);
+  const name = 'nova-nota-' + timestamp + '.md';
+  const path = folder ? folder + '/' + name : name;
+  const content = '# Nova nota\n\n';
+  try {
+    const result = await createFileOnGitHub(path, content);
+    files.value.push({
+      path: result.path, name: result.name, sha: result.sha,
+      folder: folder, content: content
+    });
+    activeFileId.value = result.path;
+    editMode.value = true;
+    hasUnsavedChanges.value = false;
+    showToast('Nota criada');
+    nextTick(refreshIcons);
+  } catch { /* error handled in github.js */ }
 }
 
-export function openFile(id) {
-  activeFileId.value = id;
+export async function openFile(path) {
+  if (hasUnsavedChanges.value && activeFile.value) {
+    await saveActiveFile();
+  }
+  activeFileId.value = path;
   editMode.value = false;
+  const file = files.value.find(f => f.path === path);
+  if (file && file.content === undefined) {
+    await fetchFileContent(file);
+  }
   nextTick(refreshIcons);
 }
 
-export function deleteFile(id) {
-  files.value = files.value.filter(f => f.id !== id);
-  if (activeFileId.value === id) activeFileId.value = null;
-  bookmarksData.value = bookmarksData.value.filter(b => b.fileId !== id);
-  saveBookmarks(bookmarksData.value);
-  fillableFields.value = fillableFields.value.filter(f => f.fileId !== id);
-  saveFillable(fillableFields.value);
-  persist();
-  nextTick(refreshIcons);
+export async function deleteFile(path) {
+  const file = files.value.find(f => f.path === path);
+  if (!file) return;
+  if (!confirm('Excluir "' + file.name + '" do reposit\u00f3rio?')) return;
+  try {
+    await deleteFileOnGitHub(file.path, file.sha);
+    files.value = files.value.filter(f => f.path !== path);
+    if (activeFileId.value === path) activeFileId.value = null;
+    bookmarksData.value = bookmarksData.value.filter(b => b.filePath !== path);
+    saveBookmarks(bookmarksData.value);
+    fillableFields.value = fillableFields.value.filter(f => f.filePath !== path);
+    saveFillable(fillableFields.value);
+    hasUnsavedChanges.value = false;
+    showToast('Nota exclu\u00edda');
+    nextTick(refreshIcons);
+  } catch { /* error handled */ }
 }
 
 export function onContentChange() {
   if (activeFile.value) {
-    activeFile.value.updatedAt = new Date().toISOString();
-    const m = activeFile.value.content.match(/^#\s+(.+)/m);
-    if (m) activeFile.value.name = m[1].trim();
-    persist();
+    hasUnsavedChanges.value = true;
   }
+}
+
+export async function saveActiveFile() {
+  const file = activeFile.value;
+  if (!file || !hasUnsavedChanges.value) return;
+  await saveFile(file);
 }
 
 export function startRenameNote() {
   if (!activeFile.value) return;
-  renameNote.value = { visible: true, name: activeFile.value.name, fileId: activeFile.value.id };
+  const displayName = activeFile.value.name.replace(/\.md$/, '');
+  renameNote.value = { visible: true, name: displayName, filePath: activeFile.value.path };
 }
 
-export function confirmRenameNote() {
-  const f = files.value.find(x => x.id === renameNote.value.fileId);
-  if (f && renameNote.value.name.trim()) {
-    f.name = renameNote.value.name.trim();
-    persist();
-  }
+export async function confirmRenameNote() {
+  const newName = renameNote.value.name.trim();
+  if (!newName) { renameNote.value.visible = false; return; }
+  const file = files.value.find(f => f.path === renameNote.value.filePath);
+  if (!file) { renameNote.value.visible = false; return; }
+  const newFileName = newName.endsWith('.md') ? newName : newName + '.md';
+  const newPath = file.folder ? file.folder + '/' + newFileName : newFileName;
+  if (newPath === file.path) { renameNote.value.visible = false; return; }
+  try {
+    if (file.content === undefined) await fetchFileContent(file);
+    const result = await renameFileOnGitHub(file.path, file.sha, newPath, file.content);
+    const oldPath = file.path;
+    file.path = result.path;
+    file.name = result.name;
+    file.sha = result.sha;
+    if (activeFileId.value === oldPath) activeFileId.value = result.path;
+    bookmarksData.value.forEach(b => { if (b.filePath === oldPath) b.filePath = result.path; });
+    saveBookmarks(bookmarksData.value);
+    fillableFields.value.forEach(f => { if (f.filePath === oldPath) f.filePath = result.path; });
+    saveFillable(fillableFields.value);
+    showToast('Nota renomeada');
+  } catch { /* error handled */ }
   renameNote.value.visible = false;
+  nextTick(refreshIcons);
 }

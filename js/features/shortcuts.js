@@ -2,7 +2,7 @@
 
 import { activeFile } from '../state.js';
 import { toggleMode } from './settings.js';
-import { createFile } from './notes.js';
+import { createFile, saveActiveFile } from './notes.js';
 
 export function onKeydown(e) {
   if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
@@ -12,5 +12,9 @@ export function onKeydown(e) {
   if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
     e.preventDefault();
     createFile();
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    if (activeFile.value) saveActiveFile();
   }
 }
