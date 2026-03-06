@@ -7,6 +7,7 @@ import { saveBookmarks, saveFillable } from '../storage.js';
 import { fetchFileContent, saveFile, createFileOnGitHub, deleteFileOnGitHub, renameFileOnGitHub } from './github.js';
 import { refreshIcons } from '../utils.js';
 import { showToast } from '../components/toast.js';
+import { showConfirm } from '../components/dialog.js';
 
 export async function createFile() {
   const folder = activeFolderId.value || '';
@@ -44,7 +45,8 @@ export async function openFile(path) {
 export async function deleteFile(path) {
   const file = files.value.find(f => f.path === path);
   if (!file) return;
-  if (!confirm('Excluir "' + file.name + '" do reposit\u00f3rio?')) return;
+  const confirmed = await showConfirm({ title: 'Excluir nota', message: 'Excluir "' + file.name + '" do repositório?', confirmText: 'Excluir', danger: true });
+  if (!confirmed) return;
   try {
     await deleteFileOnGitHub(file.path, file.sha);
     files.value = files.value.filter(f => f.path !== path);
@@ -100,5 +102,31 @@ export async function confirmRenameNote() {
     showToast('Nota renomeada');
   } catch { /* error handled */ }
   renameNote.value.visible = false;
+  nextTick(refreshIcons);
+}
+
+export async function handleTitleChange(event) {
+  const newName = event.target.value.trim();
+  if (!newName || !activeFile.value) return;
+  const file = activeFile.value;
+  const currentName = file.name.replace(/\.md$/, '');
+  if (newName === currentName) return;
+  const newFileName = newName.endsWith('.md') ? newName : newName + '.md';
+  const newPath = file.folder ? file.folder + '/' + newFileName : newFileName;
+  if (newPath === file.path) return;
+  try {
+    if (file.content === undefined) await fetchFileContent(file);
+    const result = await renameFileOnGitHub(file.path, file.sha, newPath, file.content);
+    const oldPath = file.path;
+    file.path = result.path;
+    file.name = result.name;
+    file.sha = result.sha;
+    if (activeFileId.value === oldPath) activeFileId.value = result.path;
+    bookmarksData.value.forEach(b => { if (b.filePath === oldPath) b.filePath = result.path; });
+    saveBookmarks(bookmarksData.value);
+    fillableFields.value.forEach(f => { if (f.filePath === oldPath) f.filePath = result.path; });
+    saveFillable(fillableFields.value);
+    showToast('Nota renomeada');
+  } catch { /* error handled */ }
   nextTick(refreshIcons);
 }

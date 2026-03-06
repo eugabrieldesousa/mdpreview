@@ -195,6 +195,12 @@ textarea:focus, input:focus { outline: none; }
 .hljs-link { color: var(--code-string) !important; }
 .hljs-emphasis { font-style: italic; }
 .hljs-strong { font-weight: 700; }
+.hljs-subst { color: var(--code-variable) !important; }
+.hljs-property { color: var(--code-attr) !important; }
+.hljs-punctuation { color: var(--code-plain) !important; }
+.hljs-operator { color: var(--code-keyword) !important; }
+.hljs-char { color: var(--code-string) !important; }
+.hljs-doctag { color: var(--code-comment) !important; font-weight: 600; }
 
 /* === SELECTION === */
 ::selection { background: var(--accent-faint); color: var(--text-primary); }

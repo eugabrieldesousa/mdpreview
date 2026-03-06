@@ -72,7 +72,7 @@
   <!-- MAIN APP -->
   <template v-if="ghScreen === 'app'">
 
-  <button class="mobile-toggle" @click="sidebarOpen = !sidebarOpen" aria-label="Menu">
+  <button class="mobile-toggle" @click="sidebarOpen = !sidebarOpen" aria-label="Menu" data-tooltip="Menu">
     <i data-lucide="menu" style="width:20px;height:20px;"></i>
   </button>
 
@@ -84,10 +84,10 @@
     <div class="sidebar-header">
       <span class="app-title">MD Viewer</span>
       <div style="display:flex;gap:4px;align-items:center;">
-        <button @click="createFolder" aria-label="Nova pasta">
+        <button @click="createFolder" aria-label="Nova pasta" data-tooltip="Nova pasta">
           <i data-lucide="plus" style="width:18px;height:18px;"></i>
         </button>
-        <button v-if="!isMobile" class="collapse-btn" @click="sidebarCollapsed = !sidebarCollapsed" aria-label="Colapsar sidebar">
+        <button v-if="!isMobile" class="collapse-btn" @click="sidebarCollapsed = !sidebarCollapsed" aria-label="Colapsar sidebar" data-tooltip="Recolher sidebar">
           <i data-lucide="panel-left-close" style="width:16px;height:16px;"></i>
         </button>
       </div>
@@ -117,7 +117,7 @@
       <div class="gh-account-info">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
         <span class="gh-account-repo">{{ ghOwner }}/{{ ghRepo }}</span>
-        <button class="btn-ghost btn-sm" @click="ghChangeRepo" aria-label="Trocar repo">
+        <button class="btn-ghost btn-sm" @click="ghChangeRepo" aria-label="Trocar repo" data-tooltip="Trocar repositório" data-tooltip-pos="top">
           <i data-lucide="repeat" style="width:14px;height:14px;"></i>
         </button>
       </div>
@@ -129,10 +129,10 @@
     <div class="notes-header">
       <span class="notes-title">{{ currentFolderName }}</span>
       <div class="header-actions">
-        <button @click="createFile" aria-label="Nova nota">
+        <button @click="createFile" aria-label="Nova nota" data-tooltip="Nova nota">
           <i data-lucide="square-pen" style="width:18px;height:18px;"></i>
         </button>
-        <button v-if="!isMobile" class="collapse-btn" @click="notesListCollapsed = !notesListCollapsed" aria-label="Colapsar lista">
+        <button v-if="!isMobile" class="collapse-btn" @click="notesListCollapsed = !notesListCollapsed" aria-label="Colapsar lista" data-tooltip="Recolher lista">
           <i data-lucide="panel-left-close" style="width:16px;height:16px;"></i>
         </button>
       </div>
@@ -161,44 +161,61 @@
   <main class="editor-pane" v-if="activeFile">
     <div class="editor-header">
       <div class="left-actions">
-        <button v-if="sidebarCollapsed && !isMobile" @click="sidebarCollapsed = false" aria-label="Mostrar sidebar" class="expand-col-btn">
+        <button v-if="sidebarCollapsed && !isMobile" @click="sidebarCollapsed = false" aria-label="Mostrar sidebar" class="expand-col-btn" data-tooltip="Expandir sidebar">
           <i data-lucide="panel-left-open" style="width:16px;height:16px;"></i>
         </button>
-        <button v-if="notesListCollapsed && !isMobile" @click="notesListCollapsed = false" aria-label="Mostrar notas" class="expand-col-btn">
+        <button v-if="notesListCollapsed && !isMobile" @click="notesListCollapsed = false" aria-label="Mostrar notas" class="expand-col-btn" data-tooltip="Expandir lista">
           <i data-lucide="columns-2" style="width:16px;height:16px;"></i>
         </button>
-        <button v-if="isMobile" @click="activeFileId = null" aria-label="Voltar">
+        <button v-if="isMobile" @click="activeFileId = null" aria-label="Voltar" data-tooltip="Voltar">
           <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
         </button>
-        <button @click="deleteFile(activeFile.path)" aria-label="Excluir nota">
+        <button @click="deleteFile(activeFile.path)" aria-label="Excluir nota" data-tooltip="Excluir nota">
           <i data-lucide="trash-2" style="width:18px;height:18px;"></i>
         </button>
         <span class="bookmark-btn-wrap">
-          <button @click="showBookmarks = true" aria-label="Atalhos">
+          <button @click="showBookmarks = true" aria-label="Atalhos" data-tooltip="Atalhos">
             <i data-lucide="bookmark" style="width:18px;height:18px;"></i>
           </button>
           <span v-if="currentFileBookmarks.length" class="bookmark-badge">{{ currentFileBookmarks.length }}</span>
         </span>
-        <button @click="showSettings = true" aria-label="Tamanho da fonte">
+        <button @click="showSettings = true" aria-label="Configurações" data-tooltip="Configurações">
           <i data-lucide="a-large-small" style="width:18px;height:18px;"></i>
         </button>
-        <button @click="exportSingle" aria-label="Download">
+        <button @click="exportSingle" aria-label="Download" data-tooltip="Baixar nota">
           <i data-lucide="download" style="width:18px;height:18px;"></i>
         </button>
-        <button @click="startRenameNote" aria-label="Renomear">
+        <button @click="startRenameNote" aria-label="Renomear" data-tooltip="Renomear">
           <i data-lucide="pencil" style="width:18px;height:18px;"></i>
         </button>
       </div>
       <div class="right-actions">
-        <button v-if="hasUnsavedChanges" @click="saveActiveFile" :disabled="ghSaving" aria-label="Salvar" class="save-btn">
+        <button v-if="hasUnsavedChanges" @click="saveActiveFile" :disabled="ghSaving" aria-label="Salvar" class="save-btn" data-tooltip="Salvar no GitHub">
           <i data-lucide="save" style="width:18px;height:18px;"></i>
           <span class="save-label">{{ ghSaving ? 'Salvando...' : 'Salvar' }}</span>
         </button>
-        <button @click="toggleMode" :aria-label="editMode ? 'Visualizar' : 'Editar Markdown'">
+        <button @click="toggleMode" :aria-label="editMode ? 'Visualizar' : 'Editar Markdown'" :data-tooltip="editMode ? 'Visualizar' : 'Editar Markdown'">
           <i :data-lucide="editMode ? 'eye' : 'code'" style="width:18px;height:18px;"></i>
         </button>
         <span class="edit-status">{{ editMode ? 'Markdown' : '' }}</span>
       </div>
+    </div>
+    <div class="note-title-bar">
+      <div class="note-title-left">
+        <input class="note-title-input" :value="activeFile.name.replace(/\.md$/, '')"
+               @blur="handleTitleChange($event)"
+               @keydown.enter="$event.target.blur()"
+               spellcheck="false"
+               placeholder="Nome do arquivo...">
+        <span class="format-badge">
+          <i data-lucide="file-code" style="width:12px;height:12px;"></i>
+          Markdown
+        </span>
+      </div>
+      <span class="note-folder-tag" v-if="activeFile.folder">
+        <i data-lucide="folder" style="width:12px;height:12px;"></i>
+        {{ activeFile.folder }}
+      </span>
     </div>
     <div class="editor-body">
       <textarea v-if="editMode" class="editor-textarea" v-model="activeFile.content"
@@ -214,18 +231,18 @@
   <main class="editor-pane" v-else>
     <div class="editor-header">
       <div class="left-actions">
-        <button v-if="sidebarCollapsed && !isMobile" @click="sidebarCollapsed = false" aria-label="Mostrar sidebar" class="expand-col-btn">
+        <button v-if="sidebarCollapsed && !isMobile" @click="sidebarCollapsed = false" aria-label="Mostrar sidebar" class="expand-col-btn" data-tooltip="Expandir sidebar">
           <i data-lucide="panel-left-open" style="width:16px;height:16px;"></i>
         </button>
-        <button v-if="notesListCollapsed && !isMobile" @click="notesListCollapsed = false" aria-label="Mostrar notas" class="expand-col-btn">
+        <button v-if="notesListCollapsed && !isMobile" @click="notesListCollapsed = false" aria-label="Mostrar notas" class="expand-col-btn" data-tooltip="Expandir lista">
           <i data-lucide="columns-2" style="width:16px;height:16px;"></i>
         </button>
-        <button v-if="isMobile" @click="sidebarOpen = true" aria-label="Menu">
+        <button v-if="isMobile" @click="sidebarOpen = true" aria-label="Menu" data-tooltip="Menu">
           <i data-lucide="menu" style="width:18px;height:18px;"></i>
         </button>
       </div>
       <div class="right-actions">
-        <button @click="toggleTheme" aria-label="Alternar tema">
+        <button @click="toggleTheme" aria-label="Alternar tema" data-tooltip="Alternar tema">
           <i :data-lucide="isDark ? 'sun' : 'moon'" style="width:18px;height:18px;"></i>
         </button>
       </div>
@@ -253,7 +270,7 @@
   <div v-if="showSettings" class="modal-overlay" @click.self="showSettings = false">
     <div class="modal" style="max-width: 400px;">
       <div class="modal-header">
-        <h2>Configuracoes</h2>
+        <h2>Configurações</h2>
         <button @click="showSettings = false" aria-label="Fechar">
           <i data-lucide="x" style="width:18px;height:18px;"></i>
         </button>
@@ -280,6 +297,24 @@
             <option value="'Georgia', 'Times New Roman', serif">Georgia (serif)</option>
             <option value="'SF Mono', 'Fira Code', 'Consolas', monospace">SF Mono (mono)</option>
           </select>
+        </div>
+        <div class="settings-row">
+          <label>Cor de destaque</label>
+          <div class="accent-swatches">
+            <button v-for="c in accentPresets" :key="c.value"
+                    class="accent-swatch"
+                    :class="{ active: accentColor === c.value }"
+                    :style="{ background: c.value }"
+                    @click="changeAccentColor(c.value)"
+                    :data-tooltip="c.label">
+            </button>
+            <label class="accent-custom-wrap" data-tooltip="Cor personalizada">
+              <input type="color" :value="accentColor" @input="changeAccentColor($event.target.value)" class="accent-custom-input">
+              <span class="accent-custom-btn">
+                <i data-lucide="palette" style="width:14px;height:14px;"></i>
+              </span>
+            </label>
+          </div>
         </div>
       </div>
     </div>
@@ -359,6 +394,30 @@
   </div>
 
   </template><!-- end ghScreen === 'app' -->
+
+  <!-- CUSTOM DIALOG (confirm/prompt) -->
+  <div v-if="dialog.visible" class="modal-overlay" @click.self="cancelDialogAction">
+    <div class="modal" style="max-width:380px;">
+      <div class="modal-header">
+        <h2>{{ dialog.title }}</h2>
+        <button @click="cancelDialogAction" aria-label="Fechar">
+          <i data-lucide="x" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p v-if="dialog.message" class="dialog-body-message">{{ dialog.message }}</p>
+        <input v-if="dialog.type === 'prompt'" type="text"
+               class="dialog-input"
+               v-model="dialog.inputValue"
+               :placeholder="dialog.placeholder"
+               @keydown.enter="confirmDialogAction">
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" @click="cancelDialogAction">{{ dialog.cancelText }}</button>
+        <button :class="dialog.danger ? 'btn-danger' : 'btn-primary'" @click="confirmDialogAction">{{ dialog.confirmText }}</button>
+      </div>
+    </div>
+  </div>
 
   <div v-if="toast.visible" class="toast" :class="{ 'fade-out': toast.fading }">
     <i data-lucide="check-circle" class="toast-icon" style="width:18px;height:18px;"></i>

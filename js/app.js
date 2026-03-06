@@ -4,7 +4,7 @@ const { createApp, watch, nextTick, onMounted, onUnmounted } = Vue;
 
 // State
 import {
-  files, folders, isDark, fontSize, fontFamily,
+  files, folders, isDark, fontSize, fontFamily, accentColor,
   activeFolderId, activeFileId, activeFile, editMode,
   searchQuery, sidebarOpen, showSettings, isMobile,
   currentFolderName, filteredFiles, markdownBody,
@@ -23,18 +23,19 @@ import { getTitle, getPreview, formatDate, refreshIcons } from './utils.js';
 // Components
 import { showToast } from './components/toast.js';
 import { onTextSelect, hidePopover, copySelection, quoteSelection, onDocClick } from './components/popover.js';
+import { dialog, confirmDialogAction, cancelDialogAction } from './components/dialog.js';
 
 // Features
 import { createFolder, selectFolder, filesByFolder, toggleSection } from './features/folders.js';
-import { createFile, openFile, deleteFile, onContentChange, saveActiveFile, startRenameNote, confirmRenameNote } from './features/notes.js';
+import { createFile, openFile, deleteFile, onContentChange, saveActiveFile, startRenameNote, confirmRenameNote, handleTitleChange } from './features/notes.js';
 import { renderedMarkdown, copyCode } from './features/markdown.js';
-import { toggleTheme, changeFontSize, saveFontFamily, toggleMode, applyTheme, applyFont } from './features/settings.js';
+import { toggleTheme, changeFontSize, saveFontFamily, toggleMode, applyTheme, applyFont, applyAccentColor, changeAccentColor, accentPresets } from './features/settings.js';
 import { addFillableFromSelection, applyFillButtons, openFillModal, removeFillField, copyFilledCode } from './features/fillable.js';
 import { currentFileBookmarks, addBookmarkFromSelection, removeBookmark, navigateToBookmark, applyBookmarkIndicators } from './features/bookmarks.js';
 import { exportSingle } from './features/importExport.js';
 import { onKeydown } from './features/shortcuts.js';
 import { onInlineEdit } from './features/inlineEdit.js';
-import { ghConnect, ghDisconnect, ghSelectRepo, ghChangeRepo, ghAutoConnect } from './features/github.js';
+import { ghConnect, ghDisconnect, ghSelectRepo, ghChangeRepo, ghAutoConnect, syncConfigToGitHub } from './features/github.js';
 
 // Global callbacks for rendered HTML (code blocks)
 window.__copyCode = copyCode;
@@ -46,6 +47,7 @@ createApp({
     onMounted(() => {
       applyTheme();
       applyFont();
+      applyAccentColor();
       refreshIcons();
       ghAutoConnect();
       window.addEventListener('resize', onResize);
@@ -75,6 +77,7 @@ createApp({
       () => fillModal.value.visible,
       () => toast.value.visible,
       () => showBookmarks.value,
+      () => dialog.value.visible,
       ghScreen,
       collapsedSections,
       sidebarCollapsed, notesListCollapsed
@@ -89,6 +92,11 @@ createApp({
       }
     });
 
+    // Sync config to GitHub on changes
+    watch([fillableFields, bookmarksData, accentColor], () => {
+      syncConfigToGitHub();
+    }, { deep: true });
+
     return {
       // State
       files, folders, isDark, fontSize, fontFamily,
@@ -101,6 +109,10 @@ createApp({
       bookmarksData, showBookmarks, currentFileBookmarks,
       collapsedSections, sidebarCollapsed, notesListCollapsed,
       hasUnsavedChanges,
+      // Dialog
+      dialog, confirmDialogAction, cancelDialogAction,
+      // Accent
+      accentColor, accentPresets, changeAccentColor,
       // GitHub
       ghToken, ghOwner, ghRepo, ghConnected,
       ghScreen, ghRepos, ghLoading, ghSaving, ghError,
@@ -113,7 +125,7 @@ createApp({
       addFillableFromSelection, removeFillField, copyFilledCode,
       addBookmarkFromSelection, removeBookmark, navigateToBookmark,
       exportSingle,
-      startRenameNote, confirmRenameNote,
+      startRenameNote, confirmRenameNote, handleTitleChange,
       onInlineEdit,
       ghConnect, ghDisconnect, ghSelectRepo, ghChangeRepo,
       showToast, refreshIcons

@@ -10,6 +10,10 @@ const settings = loadSettings();
 export const isDark = ref(settings.dark);
 export const fontSize = ref(settings.fontSize);
 export const fontFamily = ref(settings.fontFamily);
+export const accentColor = ref(settings.accentColor || '#0A84FF');
+
+// --- GitHub Config ---
+export const configSha = ref(null);
 
 // --- GitHub Auth ---
 export const ghToken = ref(loadGhToken());

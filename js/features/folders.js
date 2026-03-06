@@ -7,9 +7,10 @@ import { saveCollapsed } from '../storage.js';
 import { createFileOnGitHub } from './github.js';
 import { refreshIcons } from '../utils.js';
 import { showToast } from '../components/toast.js';
+import { showPrompt } from '../components/dialog.js';
 
 export async function createFolder() {
-  const name = prompt('Nome da pasta:');
+  const name = await showPrompt({ title: 'Nova pasta', placeholder: 'Nome da pasta', confirmText: 'Criar' });
   if (!name || !name.trim()) return;
   const safeName = name.trim().replace(/[^a-zA-Z0-9\u00C0-\u00FA _-]/g, '').replace(/\s+/g, '-');
   if (!safeName) return;

@@ -42,6 +42,7 @@ export function loadSettings() {
     dark: window.matchMedia('(prefers-color-scheme: dark)').matches !== false,
     fontSize: 15,
     fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif",
+    accentColor: '#0A84FF',
   });
 }
 

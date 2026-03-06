@@ -5,11 +5,13 @@ const { nextTick } = Vue;
 import {
   ghToken, ghOwner, ghRepo, ghConnected, ghScreen,
   ghRepos, ghLoading, ghSaving, ghError,
-  files, folders, activeFileId, hasUnsavedChanges
+  files, folders, activeFileId, hasUnsavedChanges,
+  configSha, accentColor, fillableFields, bookmarksData
 } from '../state.js';
-import { saveGhToken, saveGhOwner, saveGhRepo, clearGhCredentials } from '../storage.js';
+import { saveGhToken, saveGhOwner, saveGhRepo, clearGhCredentials, saveFillable, saveBookmarks } from '../storage.js';
 import { showToast } from '../components/toast.js';
 import { refreshIcons } from '../utils.js';
+import { applyAccentColor } from './settings.js';
 
 const API = 'https://api.github.com';
 
@@ -149,6 +151,7 @@ export async function loadRepoTree() {
 
     files.value = mdFiles;
     folders.value = Array.from(dirSet).sort().map(d => ({ id: d, name: d }));
+    await loadAndApplyConfig();
   } catch (e) {
     ghError.value = e.message;
   } finally {
@@ -300,4 +303,71 @@ export async function ghAutoConnect() {
   }
 
   nextTick(refreshIcons);
+}
+
+// --- Config sync (GitHub) ---
+const CONFIG_PATH = '.mdviewer.json';
+
+async function loadConfigFromGitHub() {
+  try {
+    const url = API + '/repos/' + encodeURIComponent(ghOwner.value) + '/' + encodeURIComponent(ghRepo.value) + '/contents/' + CONFIG_PATH;
+    const res = await fetch(url, { headers: headers() });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const content = decodeBase64(data.content);
+    return { config: JSON.parse(content), sha: data.sha };
+  } catch {
+    return null;
+  }
+}
+
+async function saveConfigToGitHub(config) {
+  try {
+    const url = API + '/repos/' + encodeURIComponent(ghOwner.value) + '/' + encodeURIComponent(ghRepo.value) + '/contents/' + CONFIG_PATH;
+    const content = JSON.stringify(config, null, 2);
+    const body = {
+      message: 'Atualizar configurações via MD Viewer',
+      content: encodeBase64(content),
+    };
+    if (configSha.value) body.sha = configSha.value;
+    const res = await fetch(url, { method: 'PUT', headers: headers(), body: JSON.stringify(body) });
+    if (!res.ok) return;
+    const data = await res.json();
+    configSha.value = data.content.sha;
+  } catch { /* config save failed silently */ }
+}
+
+async function loadAndApplyConfig() {
+  const result = await loadConfigFromGitHub();
+  if (!result) return;
+  const { config, sha } = result;
+  configSha.value = sha;
+  if (config.fillableFields) {
+    fillableFields.value = config.fillableFields;
+    saveFillable(config.fillableFields);
+  }
+  if (config.bookmarks) {
+    bookmarksData.value = config.bookmarks;
+    saveBookmarks(config.bookmarks);
+  }
+  if (config.settings) {
+    if (config.settings.accentColor) {
+      accentColor.value = config.settings.accentColor;
+      applyAccentColor();
+    }
+  }
+}
+
+let _configTimer = null;
+export function syncConfigToGitHub() {
+  if (_configTimer) clearTimeout(_configTimer);
+  _configTimer = setTimeout(async () => {
+    const config = {
+      version: 1,
+      settings: { accentColor: accentColor.value },
+      fillableFields: fillableFields.value,
+      bookmarks: bookmarksData.value
+    };
+    await saveConfigToGitHub(config);
+  }, 3000);
 }

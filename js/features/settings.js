@@ -2,12 +2,12 @@
 
 const { nextTick } = Vue;
 
-import { isDark, fontSize, fontFamily, editMode } from '../state.js';
+import { isDark, fontSize, fontFamily, editMode, accentColor } from '../state.js';
 import { saveSettings } from '../storage.js';
 import { refreshIcons } from '../utils.js';
 
 function persistSettings() {
-  saveSettings({ dark: isDark.value, fontSize: fontSize.value, fontFamily: fontFamily.value });
+  saveSettings({ dark: isDark.value, fontSize: fontSize.value, fontFamily: fontFamily.value, accentColor: accentColor.value });
 }
 
 export function applyTheme() {
@@ -46,4 +46,38 @@ export function saveFontFamily() {
 export function toggleMode() {
   editMode.value = !editMode.value;
   nextTick(refreshIcons);
+}
+
+// --- Accent Color ---
+export const accentPresets = [
+  { value: '#0A84FF', label: 'Azul' },
+  { value: '#BF5AF2', label: 'Roxo' },
+  { value: '#FF375F', label: 'Rosa' },
+  { value: '#FF9F0A', label: 'Laranja' },
+  { value: '#32D74B', label: 'Verde' },
+  { value: '#64D2FF', label: 'Ciano' },
+];
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return { r, g, b };
+}
+
+export function applyAccentColor() {
+  const hex = accentColor.value;
+  if (!hex) return;
+  const { r, g, b } = hexToRgb(hex);
+  const root = document.documentElement;
+  root.style.setProperty('--accent', hex);
+  root.style.setProperty('--accent-dim', `rgba(${r},${g},${b},0.60)`);
+  root.style.setProperty('--accent-faint', `rgba(${r},${g},${b},0.35)`);
+  root.style.setProperty('--list-active', `rgba(${r},${g},${b},0.16)`);
+}
+
+export function changeAccentColor(hex) {
+  accentColor.value = hex;
+  applyAccentColor();
+  persistSettings();
 }
