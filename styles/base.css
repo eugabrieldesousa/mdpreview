@@ -1,25 +1,25 @@
 /* Responsabilidade: Reset, variáveis CSS (dark/light), tipografia, animações, hljs overrides, seleção */
 
 :root {
-  /* === BACKGROUNDS (Dark Mode - iOS OLED) === */
-  --bg: #000000;
-  --sidebar-bg: #1C1C1E;
-  --list-bg: #1C1C1E;
-  --list-active: rgba(10,132,255,0.18);
-  --editor-bg: #000000;
-  --code-bg: #1C1C1E;
-  --hover: rgba(255,255,255,0.08);
-  --input-bg: #2C2C2E;
-  --modal-bg: #2C2C2E;
-  --toast-bg: #2C2C2E;
+  /* === BACKGROUNDS (Dark Mode - Soft) === */
+  --bg: #0D0D0F;
+  --sidebar-bg: #1A1A1E;
+  --list-bg: #1A1A1E;
+  --list-active: rgba(10,132,255,0.16);
+  --editor-bg: #0D0D0F;
+  --code-bg: #1A1A1E;
+  --hover: rgba(255,255,255,0.07);
+  --input-bg: #28282C;
+  --modal-bg: #28282C;
+  --toast-bg: #28282C;
 
   /* === TEXTOS (Dark) === */
-  --text-primary: #FFFFFF;
-  --text-body: #EBEBF5;
-  --text-secondary: #98989D;
-  --text-tertiary: #636366;
-  --text-quaternary: #48484A;
-  --text-code: #FFFFFF;
+  --text-primary: #F5F5F7;
+  --text-body: #E0E0E8;
+  --text-secondary: #8E8E93;
+  --text-tertiary: #5A5A5E;
+  --text-quaternary: #3A3A3E;
+  --text-code: #F5F5F7;
 
   /* === ACCENT iOS (Dark) === */
   --accent: #0A84FF;
@@ -87,24 +87,24 @@
   --font-family: var(--font-system);
 }
 
-/* === LIGHT MODE (iOS) === */
+/* === LIGHT MODE (Soft) === */
 .light {
-  --bg: #FFFFFF;
-  --sidebar-bg: #F2F2F7;
-  --list-bg: #FFFFFF;
-  --list-active: rgba(0,122,255,0.12);
-  --editor-bg: #FFFFFF;
-  --code-bg: #F5F5F7;
-  --hover: rgba(0,0,0,0.04);
-  --input-bg: #F2F2F7;
-  --modal-bg: #FFFFFF;
-  --toast-bg: #FFFFFF;
+  --bg: #F8F8FA;
+  --sidebar-bg: #F0F0F5;
+  --list-bg: #F8F8FA;
+  --list-active: rgba(0,122,255,0.10);
+  --editor-bg: #F8F8FA;
+  --code-bg: #ECEDF2;
+  --hover: rgba(0,0,0,0.035);
+  --input-bg: #EDEDF2;
+  --modal-bg: #F8F8FA;
+  --toast-bg: #F8F8FA;
 
-  --text-primary: #000000;
-  --text-body: #3C3C43;
-  --text-secondary: #8E8E93;
-  --text-tertiary: #AEAEB2;
-  --text-quaternary: #C7C7CC;
+  --text-primary: #1C1C1E;
+  --text-body: #3A3A42;
+  --text-secondary: #86868B;
+  --text-tertiary: #ABABAF;
+  --text-quaternary: #C4C4C8;
   --text-code: #1D1D1F;
 
   --accent: #007AFF;

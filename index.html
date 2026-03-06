@@ -39,7 +39,7 @@
     </div>
     <div class="folder-list">
       <div class="folder-item" :class="{ active: activeFolderId === null }"
-           @click="activeFolderId = null; sidebarOpen = false">
+           @click="activeFolderId = null; notesListCollapsed = false; sidebarOpen = false">
         <i data-lucide="inbox" class="folder-icon" style="width:18px;height:18px;"></i>
         <span class="folder-name">Todas as notas</span>
         <span class="folder-count">{{ files.length }}</span>
@@ -156,10 +156,10 @@
     <div class="editor-body">
       <textarea v-if="editMode" class="editor-textarea" v-model="activeFile.content"
                 @input="onContentChange" spellcheck="false"></textarea>
-      <div v-else class="tiptap-wrap">
-        <div id="tiptap-editor" class="markdown-body" ref="markdownBody"
-             @mouseup="onTextSelect" @mousedown="hidePopover"></div>
-      </div>
+      <div v-else class="markdown-body" ref="markdownBody"
+           v-html="renderedMarkdown"
+           @mouseup="onTextSelect" @mousedown="hidePopover"
+           @dblclick="onInlineEdit"></div>
     </div>
   </main>
 
@@ -167,6 +167,12 @@
   <main class="editor-pane" v-else>
     <div class="editor-header">
       <div class="left-actions">
+        <button v-if="sidebarCollapsed && !isMobile" @click="sidebarCollapsed = false" aria-label="Mostrar sidebar" class="expand-col-btn">
+          <i data-lucide="panel-left-open" style="width:16px;height:16px;"></i>
+        </button>
+        <button v-if="notesListCollapsed && !isMobile" @click="notesListCollapsed = false" aria-label="Mostrar notas" class="expand-col-btn">
+          <i data-lucide="columns-2" style="width:16px;height:16px;"></i>
+        </button>
         <button v-if="isMobile" @click="sidebarOpen = true" aria-label="Menu">
           <i data-lucide="menu" style="width:18px;height:18px;"></i>
         </button>

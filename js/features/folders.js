@@ -2,7 +2,7 @@
 
 const { nextTick } = Vue;
 
-import { folders, files, activeFolderId, sidebarOpen, renamingFolderId, renamingFolderName, persist, collapsedSections } from '../state.js';
+import { folders, files, activeFolderId, sidebarOpen, notesListCollapsed, renamingFolderId, renamingFolderName, persist, collapsedSections } from '../state.js';
 import { uuid, refreshIcons } from '../utils.js';
 import { saveCollapsed } from '../storage.js';
 
@@ -14,6 +14,7 @@ export function createFolder() {
 
 export function selectFolder(id) {
   activeFolderId.value = id;
+  notesListCollapsed.value = false;
   sidebarOpen.value = false;
 }
 

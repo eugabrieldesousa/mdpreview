@@ -32,7 +32,7 @@ import { addFillableFromSelection, applyFillButtons, openFillModal, removeFillFi
 import { currentFileBookmarks, addBookmarkFromSelection, removeBookmark, navigateToBookmark } from './features/bookmarks.js';
 import { exportProject, exportSingle, importProject, resolveImport } from './features/importExport.js';
 import { onKeydown } from './features/shortcuts.js';
-import { initTipTap, destroyTipTap, setupTipTapWatchers } from './features/tiptap.js';
+import { onInlineEdit } from './features/inlineEdit.js';
 
 // Global callbacks for rendered HTML (code blocks)
 window.__copyCode = copyCode;
@@ -56,12 +56,9 @@ createApp({
       document.removeEventListener('click', onDocClick);
     });
 
-    // Setup TipTap watchers
-    setupTipTapWatchers();
-
-    // Re-apply fill buttons after markdown render (edit mode raw preview)
+    // Re-apply fill buttons after markdown render (preview mode)
     watch([renderedMarkdown, editMode], () => {
-      if (editMode.value) {
+      if (!editMode.value) {
         nextTick(() => applyFillButtons());
       }
     });
@@ -102,7 +99,7 @@ createApp({
       addBookmarkFromSelection, removeBookmark, navigateToBookmark,
       exportProject, exportSingle, importProject, resolveImport,
       startRenameNote, confirmRenameNote,
-      initTipTap, destroyTipTap,
+      onInlineEdit,
       persist, showToast, refreshIcons
     };
   }
