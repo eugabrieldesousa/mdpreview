@@ -12,7 +12,7 @@ import {
   toast, popover, selectedText, importConflict, renameNote,
   fillableFields, fillModal,
   bookmarksData, showBookmarks,
-  collapsedSections,
+  collapsedSections, sidebarCollapsed, notesListCollapsed,
   persist, getFolderName, onResize
 } from './state.js';
 
@@ -32,7 +32,7 @@ import { addFillableFromSelection, applyFillButtons, openFillModal, removeFillFi
 import { currentFileBookmarks, addBookmarkFromSelection, removeBookmark, navigateToBookmark } from './features/bookmarks.js';
 import { exportProject, exportSingle, importProject, resolveImport } from './features/importExport.js';
 import { onKeydown } from './features/shortcuts.js';
-import { onInlineEdit } from './features/inlineEdit.js';
+import { initTipTap, destroyTipTap, setupTipTapWatchers } from './features/tiptap.js';
 
 // Global callbacks for rendered HTML (code blocks)
 window.__copyCode = copyCode;
@@ -56,9 +56,12 @@ createApp({
       document.removeEventListener('click', onDocClick);
     });
 
-    // Re-apply fill buttons after markdown render
+    // Setup TipTap watchers
+    setupTipTapWatchers();
+
+    // Re-apply fill buttons after markdown render (edit mode raw preview)
     watch([renderedMarkdown, editMode], () => {
-      if (!editMode.value) {
+      if (editMode.value) {
         nextTick(() => applyFillButtons());
       }
     });
@@ -70,7 +73,8 @@ createApp({
       () => importConflict.value.visible,
       () => toast.value.visible,
       () => showBookmarks.value,
-      collapsedSections
+      collapsedSections,
+      sidebarCollapsed, notesListCollapsed
     ], () => {
       nextTick(refreshIcons);
     });
@@ -86,7 +90,7 @@ createApp({
       toast, popover, selectedText, importConflict, renameNote,
       fillableFields, fillModal,
       bookmarksData, showBookmarks, currentFileBookmarks,
-      collapsedSections,
+      collapsedSections, sidebarCollapsed, notesListCollapsed,
       // Methods
       toggleTheme, changeFontSize, saveFontFamily, toggleMode,
       createFolder, selectFolder, startRenameFolder, confirmRenameFolder, cancelRenameFolder,
@@ -98,7 +102,7 @@ createApp({
       addBookmarkFromSelection, removeBookmark, navigateToBookmark,
       exportProject, exportSingle, importProject, resolveImport,
       startRenameNote, confirmRenameNote,
-      onInlineEdit,
+      initTipTap, destroyTipTap,
       persist, showToast, refreshIcons
     };
   }

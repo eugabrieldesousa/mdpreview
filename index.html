@@ -25,12 +25,17 @@
   <div class="drawer-overlay" :class="{ visible: sidebarOpen }" @click="sidebarOpen = false"></div>
 
   
-  <aside class="sidebar" :class="{ open: sidebarOpen }">
+  <aside class="sidebar" :class="{ open: sidebarOpen, collapsed: sidebarCollapsed && !isMobile }">
     <div class="sidebar-header">
       <span class="app-title">MD Viewer</span>
-      <button @click="createFolder" aria-label="Nova pasta">
-        <i data-lucide="plus" style="width:18px;height:18px;"></i>
-      </button>
+      <div style="display:flex;gap:4px;align-items:center;">
+        <button @click="createFolder" aria-label="Nova pasta">
+          <i data-lucide="plus" style="width:18px;height:18px;"></i>
+        </button>
+        <button v-if="!isMobile" class="collapse-btn" @click="sidebarCollapsed = !sidebarCollapsed" aria-label="Colapsar sidebar">
+          <i data-lucide="panel-left-close" style="width:16px;height:16px;"></i>
+        </button>
+      </div>
     </div>
     <div class="folder-list">
       <div class="folder-item" :class="{ active: activeFolderId === null }"
@@ -71,12 +76,15 @@
   </aside>
 
   
-  <section class="notes-list" :class="{ 'hidden-mobile': activeFileId && isMobile }">
+  <section class="notes-list" :class="{ 'hidden-mobile': activeFileId && isMobile, collapsed: notesListCollapsed && !isMobile }">
     <div class="notes-header">
       <span class="notes-title">{{ currentFolderName }}</span>
       <div class="header-actions">
         <button @click="createFile" aria-label="Nova nota">
           <i data-lucide="square-pen" style="width:18px;height:18px;"></i>
+        </button>
+        <button v-if="!isMobile" class="collapse-btn" @click="notesListCollapsed = !notesListCollapsed" aria-label="Colapsar lista">
+          <i data-lucide="panel-left-close" style="width:16px;height:16px;"></i>
         </button>
       </div>
     </div>
@@ -107,6 +115,12 @@
   <main class="editor-pane" v-if="activeFile">
     <div class="editor-header">
       <div class="left-actions">
+        <button v-if="sidebarCollapsed && !isMobile" @click="sidebarCollapsed = false" aria-label="Mostrar sidebar" class="expand-col-btn">
+          <i data-lucide="panel-left-open" style="width:16px;height:16px;"></i>
+        </button>
+        <button v-if="notesListCollapsed && !isMobile" @click="notesListCollapsed = false" aria-label="Mostrar notas" class="expand-col-btn">
+          <i data-lucide="columns-2" style="width:16px;height:16px;"></i>
+        </button>
         <button v-if="isMobile" @click="activeFileId = null" aria-label="Voltar">
           <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
         </button>
@@ -133,17 +147,19 @@
         <button @click="exportProject" aria-label="Exportar projeto">
           <i data-lucide="download" style="width:18px;height:18px;"></i>
         </button>
-        <button @click="toggleMode" :aria-label="editMode ? 'Visualizar' : 'Editar'">
-          <i :data-lucide="editMode ? 'eye' : 'edit'" style="width:18px;height:18px;"></i>
+        <button @click="toggleMode" :aria-label="editMode ? 'Visualizar' : 'Editar Markdown'">
+          <i :data-lucide="editMode ? 'eye' : 'code'" style="width:18px;height:18px;"></i>
         </button>
-        <span class="edit-status">{{ editMode ? 'Editando' : 'Editado' }}</span>
+        <span class="edit-status">{{ editMode ? 'Markdown' : '' }}</span>
       </div>
     </div>
     <div class="editor-body">
       <textarea v-if="editMode" class="editor-textarea" v-model="activeFile.content"
                 @input="onContentChange" spellcheck="false"></textarea>
-      <div v-else class="markdown-body" ref="markdownBody" v-html="renderedMarkdown"
-           @mouseup="onTextSelect" @mousedown="hidePopover" @dblclick="onInlineEdit"></div>
+      <div v-else class="tiptap-wrap">
+        <div id="tiptap-editor" class="markdown-body" ref="markdownBody"
+             @mouseup="onTextSelect" @mousedown="hidePopover"></div>
+      </div>
     </div>
   </main>
 

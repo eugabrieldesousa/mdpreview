@@ -53,6 +53,10 @@ export const showBookmarks = ref(false);
 // --- Collapsible Sections ---
 export const collapsedSections = ref(loadCollapsed());
 
+// --- Column Collapse (desktop) ---
+export const sidebarCollapsed = ref(false);
+export const notesListCollapsed = ref(false);
+
 // --- Responsividade ---
 export const isMobile = ref(window.innerWidth <= 768);
 
