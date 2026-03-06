@@ -73,6 +73,12 @@
         </div>
       </template>
     </div>
+    <div class="sidebar-footer">
+      <button class="gh-sidebar-btn" :class="{ connected: ghConnected }" @click="ghConnected ? (ghRepo ? (ghShowBrowser = true) : (ghShowModal = true)) : (ghShowModal = true)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+        <span>{{ ghConnected ? (ghRepo || 'GitHub') : 'GitHub' }}</span>
+      </button>
+    </div>
   </aside>
 
   
@@ -330,9 +336,9 @@
           <p style="font-weight:500;">Nenhum atalho criado</p>
           <p style="font-size:var(--text-sm);margin-top:var(--space-2);">Selecione texto no preview e clique em "Criar atalho"</p>
         </div>
-        <div v-for="bm in currentFileBookmarks" :key="bm.id" class="bookmark-item">
+        <div v-for="(bm, idx) in currentFileBookmarks" :key="bm.id" class="bookmark-item">
           <div class="bookmark-info" @click="navigateToBookmark(bm)">
-            <span class="bookmark-label">{{ bm.label }}</span>
+            <span class="bookmark-label"><span class="bookmark-order">{{ idx + 1 }}</span>{{ bm.label }}</span>
             <span class="bookmark-date">{{ formatDate(bm.createdAt) }}</span>
           </div>
           <button class="bookmark-remove" @click.stop="removeBookmark(bm.id)" aria-label="Remover atalho">
@@ -344,6 +350,143 @@
   </div>
 
   
+  <!-- GITHUB CONNECTION MODAL -->
+  <div v-if="ghShowModal" class="modal-overlay" @click.self="ghShowModal = false">
+    <div class="modal" style="max-width: 480px;">
+      <div class="modal-header">
+        <h2>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:8px;"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          Conectar ao GitHub
+        </h2>
+        <button @click="ghShowModal = false" aria-label="Fechar">
+          <i data-lucide="x" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <template v-if="!ghConnected">
+          <p class="gh-hint">Use um <strong>Personal Access Token</strong> com permissão <code>repo</code> para acessar repositórios privados.</p>
+          <div class="field-group">
+            <label>Token (PAT)</label>
+            <input type="password" v-model="ghToken" placeholder="ghp_xxxxxxxxxxxx" @keydown.enter="ghConnect">
+          </div>
+          <p v-if="ghError" class="gh-error">{{ ghError }}</p>
+          <button class="btn-primary gh-connect-btn" @click="ghConnect" :disabled="ghLoading">
+            {{ ghLoading ? 'Conectando...' : 'Conectar' }}
+          </button>
+        </template>
+        <template v-else>
+          <div class="gh-connected-info">
+            <span class="gh-user-badge">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+              {{ ghOwner }}
+            </span>
+            <button class="btn-ghost btn-sm" @click="ghDisconnect">Desconectar</button>
+          </div>
+          <p style="font-size:var(--text-sm);color:var(--text-secondary);margin:var(--space-3) 0;">Selecione um repositório:</p>
+          <div v-if="ghLoading" class="gh-loading">Carregando repositórios...</div>
+          <div v-else class="gh-repo-list">
+            <div v-for="repo in ghRepos" :key="repo.id" class="gh-repo-item" @click="ghSelectRepo(repo)">
+              <i data-lucide="git-branch" style="width:14px;height:14px;flex-shrink:0;color:var(--text-secondary);"></i>
+              <div class="gh-repo-info">
+                <span class="gh-repo-name">{{ repo.name }}</span>
+                <span class="gh-repo-desc">{{ repo.description || 'Sem descrição' }}</span>
+              </div>
+              <span v-if="repo.private" class="gh-repo-private">privado</span>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <!-- GITHUB FILE BROWSER -->
+  <div v-if="ghShowBrowser" class="modal-overlay" @click.self="ghShowBrowser = false">
+    <div class="modal gh-browser-modal">
+      <div class="modal-header">
+        <h2>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:6px;"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          {{ ghOwner }}/{{ ghRepo }}
+        </h2>
+        <div style="display:flex;gap:4px;align-items:center;">
+          <button class="btn-ghost btn-sm" @click="ghShowModal = true" aria-label="Trocar repo">
+            <i data-lucide="git-branch" style="width:14px;height:14px;"></i>
+          </button>
+          <button @click="ghShowBrowser = false" aria-label="Fechar">
+            <i data-lucide="x" style="width:18px;height:18px;"></i>
+          </button>
+        </div>
+      </div>
+      <div class="gh-browser-body">
+        <!-- File list panel -->
+        <div class="gh-file-panel">
+          <div class="gh-path-bar">
+            <button v-if="ghCurrentPath" class="btn-ghost btn-sm" @click="ghNavigateUp" aria-label="Voltar">
+              <i data-lucide="arrow-left" style="width:14px;height:14px;"></i>
+            </button>
+            <span class="gh-path-text">/{{ ghCurrentPath || '' }}</span>
+            <div style="margin-left:auto;display:flex;gap:4px;">
+              <button class="btn-ghost btn-sm" @click="ghLoadFiles(ghCurrentPath)" aria-label="Recarregar">
+                <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i>
+              </button>
+              <button class="btn-ghost btn-sm" @click="ghShowNewFile = !ghShowNewFile" aria-label="Novo arquivo">
+                <i data-lucide="plus" style="width:14px;height:14px;"></i>
+              </button>
+            </div>
+          </div>
+          <div v-if="ghShowNewFile" class="gh-new-file-bar">
+            <input type="text" v-model="ghNewFileName" placeholder="nome-do-arquivo.md" @keydown.enter="ghCreateFile" @keydown.escape="ghShowNewFile = false">
+            <button class="btn-primary btn-sm" @click="ghCreateFile">Criar</button>
+          </div>
+          <div v-if="ghLoading" class="gh-loading">Carregando...</div>
+          <div v-else class="gh-file-list">
+            <div v-for="item in ghFiles" :key="item.sha" class="gh-file-item" :class="{ active: ghActiveFile && ghActiveFile.path === item.path }" @click="ghOpenItem(item)">
+              <i :data-lucide="item.type === 'dir' ? 'folder' : 'file-text'" style="width:14px;height:14px;flex-shrink:0;"></i>
+              <span class="gh-file-name">{{ item.name }}</span>
+            </div>
+            <div v-if="!ghFiles.length && !ghLoading" class="gh-empty">Nenhum arquivo .md encontrado</div>
+          </div>
+        </div>
+        <!-- Preview panel -->
+        <div class="gh-preview-panel">
+          <template v-if="ghActiveFile">
+            <div class="gh-preview-header">
+              <span class="gh-preview-title">{{ ghActiveFile.name }}</span>
+              <div style="display:flex;gap:4px;align-items:center;">
+                <button class="btn-ghost btn-sm" @click="ghImportToLocal(files, folders, persist)" aria-label="Importar para local">
+                  <i data-lucide="download" style="width:14px;height:14px;"></i> Local
+                </button>
+                <button class="btn-ghost btn-sm" @click="ghEditMode = !ghEditMode" aria-label="Editar">
+                  <i :data-lucide="ghEditMode ? 'eye' : 'code'" style="width:14px;height:14px;"></i>
+                </button>
+                <button class="btn-ghost btn-sm btn-danger-text" @click="ghDeleteFile" aria-label="Excluir">
+                  <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                </button>
+              </div>
+            </div>
+            <template v-if="ghEditMode">
+              <textarea class="gh-edit-textarea" v-model="ghEditContent" spellcheck="false"></textarea>
+              <div class="gh-edit-footer">
+                <input type="text" v-model="ghCommitMsg" placeholder="Mensagem do commit (opcional)" class="gh-commit-input">
+                <div style="display:flex;gap:4px;">
+                  <button class="btn-ghost btn-sm" @click="ghEditMode = false">Cancelar</button>
+                  <button class="btn-primary btn-sm" @click="ghSaveFile" :disabled="ghLoading">
+                    {{ ghLoading ? 'Salvando...' : 'Commit & Push' }}
+                  </button>
+                </div>
+              </div>
+            </template>
+            <div v-else class="markdown-body gh-markdown" v-html="ghRenderedMarkdown"></div>
+          </template>
+          <div v-else class="gh-empty-preview">
+            <i data-lucide="file-text" style="width:40px;height:40px;opacity:0.2;"></i>
+            <p>Selecione um arquivo para visualizar</p>
+          </div>
+        </div>
+      </div>
+      <p v-if="ghError" class="gh-error" style="padding:0 var(--space-4) var(--space-3);">{{ ghError }}</p>
+    </div>
+  </div>
+
   <div v-if="toast.visible" class="toast" :class="{ 'fade-out': toast.fading }">
     <i data-lucide="check-circle" class="toast-icon" style="width:18px;height:18px;"></i>
     <span>{{ toast.message }}</span>

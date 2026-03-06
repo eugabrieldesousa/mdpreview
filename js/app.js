@@ -29,10 +29,19 @@ import { createFile, openFile, deleteFile, onContentChange, startRenameNote, con
 import { renderedMarkdown, copyCode } from './features/markdown.js';
 import { toggleTheme, changeFontSize, saveFontFamily, toggleMode, applyTheme, applyFont } from './features/settings.js';
 import { addFillableFromSelection, applyFillButtons, openFillModal, removeFillField, copyFilledCode } from './features/fillable.js';
-import { currentFileBookmarks, addBookmarkFromSelection, removeBookmark, navigateToBookmark } from './features/bookmarks.js';
+import { currentFileBookmarks, addBookmarkFromSelection, removeBookmark, navigateToBookmark, applyBookmarkIndicators } from './features/bookmarks.js';
 import { exportProject, exportSingle, importProject, resolveImport } from './features/importExport.js';
 import { onKeydown } from './features/shortcuts.js';
 import { onInlineEdit } from './features/inlineEdit.js';
+import {
+  ghToken, ghOwner, ghRepo, ghConnected, ghShowModal, ghShowBrowser,
+  ghLoading, ghRepos, ghFiles, ghCurrentPath, ghActiveFile,
+  ghEditMode, ghEditContent, ghError, ghNewFileName, ghShowNewFile, ghCommitMsg,
+  ghConnect, ghDisconnect, ghLoadRepos, ghSelectRepo,
+  ghLoadFiles, ghNavigateUp, ghOpenItem, ghOpenFile,
+  ghCreateFile, ghSaveFile, ghDeleteFile,
+  ghRenderedMarkdown, ghImportToLocal, ghAutoConnect
+} from './features/github.js';
 
 // Global callbacks for rendered HTML (code blocks)
 window.__copyCode = copyCode;
@@ -45,6 +54,7 @@ createApp({
       applyTheme();
       applyFont();
       refreshIcons();
+      ghAutoConnect();
       window.addEventListener('resize', onResize);
       window.addEventListener('keydown', onKeydown);
       document.addEventListener('click', onDocClick);
@@ -56,10 +66,13 @@ createApp({
       document.removeEventListener('click', onDocClick);
     });
 
-    // Re-apply fill buttons after markdown render (preview mode)
+    // Re-apply fill buttons and bookmark indicators after markdown render (preview mode)
     watch([renderedMarkdown, editMode], () => {
       if (!editMode.value) {
-        nextTick(() => applyFillButtons());
+        nextTick(() => {
+          applyFillButtons();
+          applyBookmarkIndicators();
+        });
       }
     });
 
@@ -70,6 +83,10 @@ createApp({
       () => importConflict.value.visible,
       () => toast.value.visible,
       () => showBookmarks.value,
+      () => ghShowModal.value,
+      () => ghShowBrowser.value,
+      () => ghActiveFile.value,
+      () => ghEditMode.value,
       collapsedSections,
       sidebarCollapsed, notesListCollapsed
     ], () => {
@@ -88,6 +105,11 @@ createApp({
       fillableFields, fillModal,
       bookmarksData, showBookmarks, currentFileBookmarks,
       collapsedSections, sidebarCollapsed, notesListCollapsed,
+      // GitHub
+      ghToken, ghOwner, ghRepo, ghConnected, ghShowModal, ghShowBrowser,
+      ghLoading, ghRepos, ghFiles, ghCurrentPath, ghActiveFile,
+      ghEditMode, ghEditContent, ghError, ghNewFileName, ghShowNewFile, ghCommitMsg,
+      ghRenderedMarkdown,
       // Methods
       toggleTheme, changeFontSize, saveFontFamily, toggleMode,
       createFolder, selectFolder, startRenameFolder, confirmRenameFolder, cancelRenameFolder,
@@ -100,6 +122,9 @@ createApp({
       exportProject, exportSingle, importProject, resolveImport,
       startRenameNote, confirmRenameNote,
       onInlineEdit,
+      ghConnect, ghDisconnect, ghLoadRepos, ghSelectRepo,
+      ghLoadFiles, ghNavigateUp, ghOpenItem, ghOpenFile,
+      ghCreateFile, ghSaveFile, ghDeleteFile, ghImportToLocal,
       persist, showToast, refreshIcons
     };
   }

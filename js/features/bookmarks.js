@@ -1,4 +1,4 @@
-// Responsabilidade: Atalhos de texto (bookmarks) — criar, navegar, remover
+// Responsabilidade: Atalhos de texto (bookmarks) — criar, navegar, remover, indicadores visuais
 
 const { computed, nextTick } = Vue;
 
@@ -11,11 +11,18 @@ function persistBookmarks() {
   saveBookmarks(bookmarksData.value);
 }
 
+function getDocPosition(content, anchor) {
+  if (!content || !anchor) return Infinity;
+  const idx = content.indexOf(anchor);
+  return idx === -1 ? Infinity : idx;
+}
+
 export const currentFileBookmarks = computed(() => {
   if (!activeFile.value) return [];
+  const content = activeFile.value.content || '';
   return bookmarksData.value
     .filter(b => b.fileId === activeFile.value.id)
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    .sort((a, b) => getDocPosition(content, a.anchor) - getDocPosition(content, b.anchor));
 });
 
 export function addBookmarkFromSelection() {
@@ -74,4 +81,33 @@ export function navigateToBookmark(bm) {
       }
     }, 100);
   });
+}
+
+export function applyBookmarkIndicators() {
+  const mbEl = markdownBody.value;
+  if (!mbEl || !activeFile.value) return;
+  mbEl.querySelectorAll('.bookmark-indicator').forEach(el => el.remove());
+  const bookmarks = bookmarksData.value.filter(b => b.fileId === activeFile.value.id);
+  if (!bookmarks.length) return;
+
+  const walker = document.createTreeWalker(mbEl, NodeFilter.SHOW_TEXT, null, false);
+  let node;
+  const matched = new Set();
+  while (node = walker.nextNode()) {
+    for (const bm of bookmarks) {
+      if (matched.has(bm.id)) continue;
+      if (node.textContent.includes(bm.anchor)) {
+        const el = node.parentElement;
+        if (el && !el.querySelector('.bookmark-indicator')) {
+          const indicator = document.createElement('span');
+          indicator.className = 'bookmark-indicator';
+          indicator.setAttribute('title', 'Atalho: ' + bm.label);
+          indicator.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>';
+          el.classList.add('bookmark-marked');
+          el.insertBefore(indicator, el.firstChild);
+          matched.add(bm.id);
+        }
+      }
+    }
+  }
 }
